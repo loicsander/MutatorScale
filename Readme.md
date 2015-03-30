@@ -1,6 +1,8 @@
 # MutatorScale
 
-Here’s an introduction to MutatorScale, a code extension to ![Letterror’s MutatorMath](https://github.com/LettError/MutatorMath) and a scripting tool meant to be used inside Robofont.
+Here’s an introduction to MutatorScale, a tool for interpolated glyph scaling, based on ![Robofab](https://github.com/robofab-developers/robofab), FontTools & ![MutatorMath](https://github.com/LettError/MutatorMath).
+
+a code extension to ![Letterror’s MutatorMath](https://github.com/LettError/MutatorMath) and a scripting tool meant to be used inside Robofont.
 
 It consists of a little set of objects — I wouldn’t go as far as to call it a library —, the most important and central one being what I call a MutatorScaleEngine.
 
