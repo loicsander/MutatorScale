@@ -2,8 +2,6 @@
 
 Here’s an introduction to MutatorScale, a tool for interpolated glyph scaling, based on ![Robofab](https://github.com/robofab-developers/robofab), FontTools & ![MutatorMath](https://github.com/LettError/MutatorMath).
 
-a code extension to ![Letterror’s MutatorMath](https://github.com/LettError/MutatorMath) and a scripting tool meant to be used inside Robofont.
-
 It consists of a little set of objects — I wouldn’t go as far as to call it a library —, the most important and central one being what I call a MutatorScaleEngine.
 
 Its function is to build an interpolation design space, based on MutatorMath, with which it is rendered easier to scale glyphs while compensating for the loss of weight and/or contrast by interpolating. Such operations imply that you have at least two interpolatable fonts to begin with.
