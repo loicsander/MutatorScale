@@ -4,6 +4,7 @@ from __future__ import division
 from robofab.world import RGlyph
 from math import atan2, tan, hypot, cos, degrees
 from fontTools.misc.bezierTools import splitCubic
+from fontTools.pens.boundsPen import BoundsPen
 from mutatorScale.booleanOperations.booleanGlyph import BooleanGlyph
 from mutatorScale.pens.utilityPens import CollectSegmentsPen
 
@@ -43,7 +44,7 @@ def getRefStems(font, slantedSection=False):
 
             glyph.skew(-angle)
 
-            xMin, yMin, xMax, yMax = glyph.box
+            xMin, yMin, xMax, yMax = getGlyphBox(glyph)
             xCenter = width / 2
             yCenter = (yMax - yMin) / 2
 
@@ -75,7 +76,7 @@ def getSlantAngle(font, returnDegrees=False):
     '''
     if 'I' in font:
         testGlyph = font['I']
-        xMin, yMin, xMax, yMax = testGlyph.box
+        xMin, yMin, xMax, yMax = getGlyphBox(testGlyph)
         hCenter = (yMax - yMin) / 2
         delta = 10
         intersections = []
@@ -101,7 +102,7 @@ def singleContourGlyph(glyph):
     singleContourGlyph.width = glyph.width
     pointPen = singleContourGlyph.getPointPen()
 
-    if len(glyph.contours) > 1:
+    if len(glyph) > 1:
 
         booleanGlyphs = []
 
@@ -188,6 +189,11 @@ def boundingBox(points):
 
 # had to add that splitLine method from Robofont’s version of fontTools
 # using fontTools 2.4’s method didn’t work, don’t know why.
+
+def getGlyphBox(glyph):
+    pen = BoundsPen(None)
+    glyph.draw(pen)
+    return pen.bounds
 
 def splitLine(pt1, pt2, where, isHorizontal):
     """Split the line between pt1 and pt2 at position 'where', which
