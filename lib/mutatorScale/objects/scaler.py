@@ -13,7 +13,7 @@ from mutatorScale.utilities.fontUtils import makeListFontName
 from mutatorScale.utilities.numbersUtils import mapValue
 
 _operationalTimes = {
-    'init':[],
+    '__init__':[],
     'getScaledGlyph':[],
     'getMasterGlyph':[],
     'makeMaster':[],
@@ -65,7 +65,7 @@ class MutatorScaleEngine:
             self.addMaster(font)
         self.mutatorErrors = []
         stop = time()
-        _operationalTimes['init'] = [(stop-start)*1000]
+        _operationalTimes['__init__'].append((stop-start)*1000)
 
     def __repr__(self):
         return 'MutatorScaleEngine # %s masters\n- %s\n' % (len(self.masters), '\n- '.join([str(master) for master in self.masters]))

@@ -5,7 +5,12 @@ from mutatorScale.objects.glyphs import MathGlyph
 from mutatorScale.utilities.fontUtils import makeListFontName, getRefStems, getSlantAngle
 
 from time import time
-operationalTime = []
+_fonts_operationalTimes = {
+    '__init__':[],
+    'setScale':[],
+    'getGlyph':[],
+    'scaleGlyph':[]
+}
 
 class ScaleFont(object):
     '''
@@ -27,7 +32,7 @@ class ScaleFont(object):
         if scale is not None:
             self.setScale(scale)
         stop = time()
-        operationalTime.append((stop-start)*1000)
+        _fonts_operationalTimes['__init__'].append((stop-start)*1000)
 
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.name, self.scale)
@@ -65,6 +70,7 @@ class ScaleFont(object):
         – either a simple (x, y) scale tuple
         – or a tuple in the form (width/x, targetHeight, referenceHeight)
         '''
+        start = time()
 
         if len(scale) == 1:
             self.scale = (scale, scale)
@@ -108,6 +114,9 @@ class ScaleFont(object):
             finally:
                 self.scale = (x * xy, xy)
 
+        stop = time()
+        _fonts_operationalTimes['setScale'].append((stop-start)*1000)
+
     def getGlyphHeight(self, glyphName):
         glyph = self.glyphs[glyphName]
         if glyph.box is not None:
@@ -115,6 +124,7 @@ class ScaleFont(object):
         return
 
     def getGlyph(self, glyphName):
+        start = time()
         if glyphName in self.glyphs:
             glyph = self.glyphs[glyphName]
             scale = self.scale
@@ -122,12 +132,16 @@ class ScaleFont(object):
             return scaledGlyph
         else:
             return KeyError
+        stop = time()
+        _fonts_operationalTimes['getGlyph'].append((stop-start)*1000)
 
     def scaleGlyph(self, glyph, scale):
         '''
         Custom implementation of a glyph scaling method that doesn’t scale components
         but does scale their offset coordinates.
         '''
+        start = time()
+
         glyph = MathGlyph(glyph)
         italicAngle = self.italicAngle
         # Skew to an upright position to prevent the slant angle from changing because of scaling
@@ -146,6 +160,10 @@ class ScaleFont(object):
         # Reverting to initial slant angle
         if italicAngle:
             glyph.skewX(-italicAngle)
+
+        stop = time()
+        _fonts_operationalTimes['scaleGlyph'].append((stop-start)*1000)
+
         return glyph
 
 class MutatorScaleFont(ScaleFont):
