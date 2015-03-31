@@ -123,16 +123,16 @@ class ScaleFont(object):
         return
 
     def getGlyph(self, glyphName):
-        start = time()
         if glyphName in self.glyphs:
+            start = time()
             glyph = self.glyphs[glyphName]
             scale = self.scale
             scaledGlyph = self.scaleGlyph(glyph, scale)
+            stop = time()
+            _fonts_operationalTimes['getGlyph'].append((stop-start)*1000)
             return scaledGlyph
         else:
             return KeyError
-        stop = time()
-        _fonts_operationalTimes['getGlyph'].append((stop-start)*1000)
 
     def scaleGlyph(self, glyph, scale):
         '''

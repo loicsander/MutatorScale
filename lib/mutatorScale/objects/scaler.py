@@ -17,6 +17,8 @@ _operationalTimes = {
     'getScaledGlyph':[],
     'getMasterGlyph':[],
     'makeMaster':[],
+    'getScaledGlyph.masterLoop':[],
+    'getScaledGlyph.retrieveInstance':[],
 }
 
 class MutatorScaleEngine:
@@ -173,6 +175,8 @@ class MutatorScaleEngine:
 
         if len(masters) > 1:
 
+            start2 = time()
+
             medianYscale = 1
             medianAngle = 0
 
@@ -206,6 +210,9 @@ class MutatorScaleEngine:
 
                     mutatorMasters.append((Location(**axis), masterGlyph))
 
+            stop2 = time()
+            _operationalTimes['getScaledGlyph.masterLoop'].append((stop2-start2)*1000)
+
             if len(angles) and slantCorrection == True:
                 # calculate a median slant angle
                 # in case there are variations among masters
@@ -214,8 +221,13 @@ class MutatorScaleEngine:
 
             medianYscale = sum(yScales) / len(yScales)
 
+            start3 = time()
+
             targetLocation = self._getTargetLocation(stemTarget, masters, twoAxes, (xScale, medianYscale))
             instanceGlyph = self._getInstanceGlyph(targetLocation, mutatorMasters)
+
+            stop3 = time()
+            _operationalTimes['getScaledGlyph.retrieveInstance'].append((stop3-start3)*1000)
 
             if instanceGlyph.name == '_error_':
                 instanceGlyph.unicodes = masters[0][glyphName].unicodes
