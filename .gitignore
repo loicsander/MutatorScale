@@ -1,3 +1,8 @@
 .DS_Store
+*.idea
 *.pyc
+*.sublime-project
+*.sublime-workspace
+lib/scaleFast-0.6.py
 build/
+lib/tests/

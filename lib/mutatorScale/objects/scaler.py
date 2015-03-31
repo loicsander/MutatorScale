@@ -60,6 +60,7 @@ class MutatorScaleEngine:
         start = time()
         self.masters = {}
         self._currentScale = None
+        self._canUseTwoAxes = False
         self.stemsWithSlantedSection = stemsWithSlantedSection
         for font in masterFonts:
             self.addMaster(font)
@@ -142,19 +143,22 @@ class MutatorScaleEngine:
         if self._currentScale is not None:
             master.setScale(self._currentScale)
         self.masters[name] = master
+        self._canUseTwoAxes = self.checkForTwoAxes()
 
     def removeMaster(self, font):
         name = makeListFontName(font)
         if self.masters.has_key(name):
             self.masters.pop(name, 0)
+        self._canUseTwoAxes = self.checkForTwoAxes()
 
     def getScaledGlyph(self, glyphName, stemTarget, slantCorrection=True):
         '''
         Returns an interpolated & scaled glyph according to set parameters and given masters.
         '''
-        start = time()
+        start1 = time()
+
         masters = self.masters.values()
-        twoAxes = self.checkForTwoAxes(masters)
+        twoAxes = self._canUseTwoAxes
         mutatorMasters = []
         yScales = []
         angles = []
@@ -225,8 +229,8 @@ class MutatorScaleEngine:
 
             instanceGlyph.round()
 
-            stop = time()
-            _operationalTimes['getScaledGlyph'].append((stop-start)*1000)
+            stop1 = time()
+            _operationalTimes['getScaledGlyph'].append((stop1-start1)*1000)
 
             return instanceGlyph
         return
@@ -299,24 +303,26 @@ class MutatorScaleEngine:
 
         if masters is None:
             masters = self.masters.values()
-        values = [master.hstem for master in masters]
 
-        '''
-        Checking if the conditions are met to have two-axis interpolation:
-        1. At least two identical values (to bind a new axis to the first axis)
-        2. At least one value different from the others (to be able to build a second axis)
-        '''
-        length = len(values)
-        if length:
-            identicalValues = 0
-            differentValues = 0
-            for i, value in enumerate(values):
-                if i < length-1:
-                    nextValue = values[i+1]
-                    if nextValue == value: identicalValues += 1
-                    if nextValue != value: differentValues += 1
-            return bool(identicalValues) and bool(differentValues)
-        return
+        if len(masters) > 2:
+            values = [master.hstem for master in masters]
+
+            '''
+            Checking if the conditions are met to have two-axis interpolation:
+            1. At least two identical values (to bind a new axis to the first axis)
+            2. At least one value different from the others (to be able to build a second axis)
+            '''
+            length = len(values)
+            if length:
+                identicalValues = 0
+                differentValues = 0
+                for i, value in enumerate(values):
+                    if i < length-1:
+                        nextValue = values[i+1]
+                        if nextValue == value: identicalValues += 1
+                        if nextValue != value: differentValues += 1
+                return bool(identicalValues) and bool(differentValues)
+        return False
 
     def getMutatorReport(self):
         return self.mutatorErrors
