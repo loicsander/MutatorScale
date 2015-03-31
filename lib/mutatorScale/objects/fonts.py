@@ -21,7 +21,6 @@ class ScaleFont(object):
     def __init__(self, font, scale=None):
         start = time()
         self.glyphs = font
-#        self.glyphs = {glyph.name:glyph for glyph in font if (not glyph.isEmpty() and not 'space' in glyph.name)}
         self.heights = {heightName:getattr(font.info, heightName) for heightName in ['capHeight','ascender','xHeight','descender']}
         self.name = '%s > %s' % (font.info.familyName, font.info.styleName)
         italicAngle = font.info.italicAngle
