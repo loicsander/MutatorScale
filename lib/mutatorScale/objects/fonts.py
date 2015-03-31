@@ -4,14 +4,6 @@ from __future__ import division
 from mutatorScale.objects.glyphs import MathGlyph
 from mutatorScale.utilities.fontUtils import makeListFontName, getRefStems, getSlantAngle
 
-from time import time
-_fonts_operationalTimes = {
-    '__init__':[],
-    'setScale':[],
-    'getGlyph':[],
-    'scaleGlyph':[]
-}
-
 class ScaleFont(object):
     '''
     Object acting partly like a font, i.e. a collection of glyphs.
@@ -19,7 +11,6 @@ class ScaleFont(object):
     '''
 
     def __init__(self, font, scale=None):
-        start = time()
         self.glyphs = font
         self.heights = {heightName:getattr(font.info, heightName) for heightName in ['capHeight','ascender','xHeight','descender']}
         self.name = '%s > %s' % (font.info.familyName, font.info.styleName)
@@ -30,8 +21,6 @@ class ScaleFont(object):
         self.scale = scale
         if scale is not None:
             self.setScale(scale)
-        stop = time()
-        _fonts_operationalTimes['__init__'].append((stop-start)*1000)
 
     def __repr__(self):
         return '<%s %s>' % (self.__class__.__name__, self.name, self.scale)
@@ -69,7 +58,6 @@ class ScaleFont(object):
         – either a simple (x, y) scale tuple
         – or a tuple in the form (width/x, targetHeight, referenceHeight)
         '''
-        start = time()
 
         if len(scale) == 1:
             self.scale = (scale, scale)
@@ -113,8 +101,6 @@ class ScaleFont(object):
             finally:
                 self.scale = (x * xy, xy)
 
-        stop = time()
-        _fonts_operationalTimes['setScale'].append((stop-start)*1000)
 
     def getGlyphHeight(self, glyphName):
         glyph = self.glyphs[glyphName]
@@ -124,12 +110,9 @@ class ScaleFont(object):
 
     def getGlyph(self, glyphName):
         if glyphName in self.glyphs:
-            start = time()
             glyph = self.glyphs[glyphName]
             scale = self.scale
             scaledGlyph = self.scaleGlyph(glyph, scale)
-            stop = time()
-            _fonts_operationalTimes['getGlyph'].append((stop-start)*1000)
             return scaledGlyph
         else:
             return KeyError
@@ -139,7 +122,6 @@ class ScaleFont(object):
         Custom implementation of a glyph scaling method that doesn’t scale components
         but does scale their offset coordinates.
         '''
-        start = time()
 
         glyph = MathGlyph(glyph)
         italicAngle = self.italicAngle
@@ -160,8 +142,6 @@ class ScaleFont(object):
         if italicAngle:
             glyph.skewX(-italicAngle)
 
-        stop = time()
-        _fonts_operationalTimes['scaleGlyph'].append((stop-start)*1000)
 
         return glyph
 

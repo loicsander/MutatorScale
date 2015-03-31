@@ -5,21 +5,10 @@ from robofab.world import RGlyph
 from mutatorMath.objects.location import Location
 from mutatorMath.objects.mutator import buildMutator
 
-from time import time
-
 from mutatorScale.objects.fonts import MutatorScaleFont
 from mutatorScale.objects.glyphs import errorGlyph
 from mutatorScale.utilities.fontUtils import makeListFontName
 from mutatorScale.utilities.numbersUtils import mapValue
-
-_operationalTimes = {
-    '__init__':[],
-    'getScaledGlyph':[],
-    'getMasterGlyph':[],
-    'makeMaster':[],
-    'getScaledGlyph.masterLoop':[],
-    'getScaledGlyph.retrieveInstance':[],
-}
 
 class MutatorScaleEngine:
 
@@ -59,7 +48,6 @@ class MutatorScaleEngine:
     errorGlyph = errorGlyph()
 
     def __init__(self, masterFonts=[], stemsWithSlantedSection=False):
-        start = time()
         self.masters = {}
         self._currentScale = None
         self._canUseTwoAxes = False
@@ -67,20 +55,15 @@ class MutatorScaleEngine:
         for font in masterFonts:
             self.addMaster(font)
         self.mutatorErrors = []
-        stop = time()
-        _operationalTimes['__init__'].append((stop-start)*1000)
 
     def __repr__(self):
         return 'MutatorScaleEngine # %s masters\n- %s\n' % (len(self.masters), '\n- '.join([str(master) for master in self.masters]))
 
     def __getitem__(self, key):
-        start = time()
         if key in self.masters.keys():
             return self.masters[key]
         else:
             raise KeyError(key)
-        stop = time()
-        _operationalTimes['getMasterGlyph'].append((stop-start)*1000)
 
     def __iter__(self):
         for master in self.masters.values():
@@ -133,11 +116,8 @@ class MutatorScaleEngine:
         '''
         Returning a MutatorScaleEngine master.
         '''
-        start = time()
         name = makeListFontName(font)
         master = MutatorScaleFont(font, stems, stemsWithSlantedSection=self.stemsWithSlantedSection)
-        stop = time()
-        _operationalTimes['makeMaster'].append((stop-start)*1000)
         return name, master
 
     def addMaster(self, font, stems=None):
@@ -157,8 +137,6 @@ class MutatorScaleEngine:
         '''
         Returns an interpolated & scaled glyph according to set parameters and given masters.
         '''
-        start1 = time()
-
         masters = self.masters.values()
         twoAxes = self._canUseTwoAxes
         mutatorMasters = []
@@ -174,8 +152,6 @@ class MutatorScaleEngine:
         '''
 
         if len(masters) > 1:
-
-            start2 = time()
 
             medianYscale = 1
             medianAngle = 0
@@ -210,9 +186,6 @@ class MutatorScaleEngine:
 
                     mutatorMasters.append((Location(**axis), masterGlyph))
 
-            stop2 = time()
-            _operationalTimes['getScaledGlyph.masterLoop'].append((stop2-start2)*1000)
-
             if len(angles) and slantCorrection == True:
                 # calculate a median slant angle
                 # in case there are variations among masters
@@ -221,13 +194,9 @@ class MutatorScaleEngine:
 
             medianYscale = sum(yScales) / len(yScales)
 
-            start3 = time()
 
             targetLocation = self._getTargetLocation(stemTarget, masters, twoAxes, (xScale, medianYscale))
             instanceGlyph = self._getInstanceGlyph(targetLocation, mutatorMasters)
-
-            stop3 = time()
-            _operationalTimes['getScaledGlyph.retrieveInstance'].append((stop3-start3)*1000)
 
             if instanceGlyph.name == '_error_':
                 instanceGlyph.unicodes = masters[0][glyphName].unicodes
@@ -240,9 +209,6 @@ class MutatorScaleEngine:
                 instanceGlyph.skew(-medianAngle)
 
             instanceGlyph.round()
-
-            stop1 = time()
-            _operationalTimes['getScaledGlyph'].append((stop1-start1)*1000)
 
             return instanceGlyph
         return
