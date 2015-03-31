@@ -12,7 +12,12 @@ from mutatorScale.objects.glyphs import errorGlyph
 from mutatorScale.utilities.fontUtils import makeListFontName
 from mutatorScale.utilities.numbersUtils import mapValue
 
-operationalTime = []
+_operationalTimes = {
+    'init':[],
+    'getScaledGlyph':[],
+    'getMasterGlyph':[],
+    'makeMaster':[],
+}
 
 class MutatorScaleEngine:
 
@@ -52,20 +57,27 @@ class MutatorScaleEngine:
     errorGlyph = errorGlyph()
 
     def __init__(self, masterFonts=[], stemsWithSlantedSection=False):
+        start = time()
         self.masters = {}
         self._currentScale = None
         self.stemsWithSlantedSection = stemsWithSlantedSection
         for font in masterFonts:
             self.addMaster(font)
+        self.mutatorErrors = []
+        stop = time()
+        _operationalTimes['init'] = [(stop-start)*1000]
 
     def __repr__(self):
         return 'MutatorScaleEngine # %s masters\n- %s\n' % (len(self.masters), '\n- '.join([str(master) for master in self.masters]))
 
     def __getitem__(self, key):
+        start = time()
         if key in self.masters.keys():
             return self.masters[key]
         else:
             raise KeyError(key)
+        stop = time()
+        _operationalTimes['getMasterGlyph'].append((stop-start)*1000)
 
     def __iter__(self):
         for master in self.masters.values():
@@ -118,8 +130,11 @@ class MutatorScaleEngine:
         '''
         Returning a MutatorScaleEngine master.
         '''
+        start = time()
         name = makeListFontName(font)
         master = MutatorScaleFont(font, stems, stemsWithSlantedSection=self.stemsWithSlantedSection)
+        stop = time()
+        _operationalTimes['makeMaster'].append((stop-start)*1000)
         return name, master
 
     def addMaster(self, font, stems=None):
@@ -137,6 +152,7 @@ class MutatorScaleEngine:
         '''
         Returns an interpolated & scaled glyph according to set parameters and given masters.
         '''
+        start = time()
         masters = self.masters.values()
         twoAxes = self.checkForTwoAxes(masters)
         mutatorMasters = []
@@ -197,12 +213,20 @@ class MutatorScaleEngine:
             targetLocation = self._getTargetLocation(stemTarget, masters, twoAxes, (xScale, medianYscale))
             instanceGlyph = self._getInstanceGlyph(targetLocation, mutatorMasters)
 
+            if instanceGlyph.name == '_error_':
+                instanceGlyph.unicodes = masters[0][glyphName].unicodes
+                self.mutatorErrors[-1]['glyph'] = glyphName
+                self.mutatorErrors[-1]['masters'] = mutatorMasters
+
             if medianAngle and slantCorrection == True:
                 # if masters were skew to upright position
                 # skew instance back to probable slant angle
                 instanceGlyph.skew(-medianAngle)
 
             instanceGlyph.round()
+
+            stop = time()
+            _operationalTimes['getScaledGlyph'].append((stop-start)*1000)
 
             return instanceGlyph
         return
@@ -220,7 +244,8 @@ class MutatorScaleEngine:
             if m is not None:
                 instance = m.makeInstance(location)
                 return instance
-        except:
+        except Exception as e:
+            self.mutatorErrors.append({'error':e.message})
             return
 
     def _getTargetLocation(self, stemTarget, masters, twoAxes, (xScale, yScale)):
@@ -292,3 +317,6 @@ class MutatorScaleEngine:
                     if nextValue != value: differentValues += 1
             return bool(identicalValues) and bool(differentValues)
         return
+
+    def getMutatorReport(self):
+        return self.mutatorErrors
