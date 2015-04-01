@@ -14,10 +14,7 @@ class ScaleFont(object):
         self.glyphs = font
         self.heights = {heightName:getattr(font.info, heightName) for heightName in ['capHeight','ascender','xHeight','descender']}
         self.name = '%s > %s' % (font.info.familyName, font.info.styleName)
-        italicAngle = font.info.italicAngle
-        if italicAngle is None:
-            italicAngle = -getSlantAngle(font, True)
-        self.italicAngle = italicAngle
+        self.italicAngle = -getSlantAngle(font, True)
         self.scale = scale
         if scale is not None:
             self.setScale(scale)
@@ -140,7 +137,6 @@ class ScaleFont(object):
         # Reverting to initial slant angle
         if italicAngle:
             glyph.skewX(-italicAngle)
-
 
         return glyph
 
