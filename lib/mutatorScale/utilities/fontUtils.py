@@ -8,7 +8,6 @@ from fontTools.pens.boundsPen import BoundsPen
 from mutatorScale.booleanOperations.booleanGlyph import BooleanGlyph
 from mutatorScale.pens.utilityPens import CollectSegmentsPen
 
-
 def makeListFontName(font):
     '''
     Returns a font name in the form: 'Family name > style name'.
