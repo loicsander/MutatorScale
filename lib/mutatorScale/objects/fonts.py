@@ -131,12 +131,11 @@ class ScaleFont(object):
 
         # Do the scaling
         glyph *= scale
-        # Cancel scaling effect on components except for their offset values
+        # Cancel scaling effect on components
         for i, component in enumerate(glyph.components):
             baseGlyph, matrix = component
             xx, yx, xy, yy, x, y = matrix
             xx, yx, xy, yy = 1, 0, 0, 1
-            x, y = x * scale[0], y * scale[1]
             glyph.components[i] = (baseGlyph, (xx, yx, xy, yy, x, y))
         # Reverting to initial slant angle
         if italicAngle:

@@ -1,6 +1,10 @@
 #coding=utf-8
 from __future__ import division
 
+import sys
+sys.path.insert(0, '/anaconda/lib/python2.7/site-packages/')
+import mutatorMath
+
 from robofab.world import RGlyph
 from mutatorMath.objects.location import Location
 from mutatorMath.objects.mutator import buildMutator
@@ -11,7 +15,6 @@ from mutatorScale.utilities.fontUtils import makeListFontName
 from mutatorScale.utilities.numbersUtils import mapValue
 
 class MutatorScaleEngine:
-
     '''
     This object is built to handle the interpolated scaling of glyphs using MutatorMath.
     It requires a list of fonts (at least two) from which it determines which kind of interpolation it can achieve.
