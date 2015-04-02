@@ -2,7 +2,7 @@
 from __future__ import division
 
 from robofab.world import RGlyph
-from math import atan2, tan, hypot, cos, degrees
+from math import atan2, tan, hypot, cos, degrees, radians
 from fontTools.misc.bezierTools import splitCubic
 from fontTools.pens.boundsPen import BoundsPen
 from mutatorScale.booleanOperations.booleanGlyph import BooleanGlyph
