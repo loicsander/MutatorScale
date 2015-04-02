@@ -66,6 +66,9 @@ def getRefStems(font, slantedSection=False):
         elif glyphName not in font:
             stems.append(None)
 
+    if slantedSection == True and stems[0] is not None:
+        stems[0] *= cos(radians(angle))
+
     return stems
 
 
