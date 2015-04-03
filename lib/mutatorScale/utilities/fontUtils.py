@@ -2,7 +2,7 @@
 from __future__ import division
 
 from robofab.world import RGlyph
-from math import atan2, tan, hypot, cos, degrees
+from math import atan2, tan, hypot, cos, degrees, radians
 from fontTools.misc.bezierTools import splitCubic
 from fontTools.pens.boundsPen import BoundsPen
 from mutatorScale.booleanOperations.booleanGlyph import BooleanGlyph
@@ -65,6 +65,9 @@ def getRefStems(font, slantedSection=False):
 
         elif glyphName not in font:
             stems.append(None)
+
+    if slantedSection == True and stems[0] is not None:
+        stems[0] *= cos(radians(angle))
 
     return stems
 
