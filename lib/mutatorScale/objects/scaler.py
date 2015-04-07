@@ -142,7 +142,7 @@ class MutatorScaleEngine:
             self.masters.pop(name, 0)
         self._canUseTwoAxes = self.checkForTwoAxes()
 
-    def getScaledGlyph(self, glyphName, stemTarget, slantCorrection=True):
+    def getScaledGlyph(self, glyphName, stemTarget, keepSidebearings=False, slantCorrection=True, attributes=None):
         """Return an interpolated & scaled glyph according to set parameters and given masters."""
         masters = self.masters.values()
         twoAxes = self._canUseTwoAxes
@@ -217,6 +217,11 @@ class MutatorScaleEngine:
                 instanceGlyph.skew(-medianAngle)
 
             instanceGlyph.round()
+
+            if attributes is not None:
+                for attributeName in attributes:
+                    value = attributes[attributeName]
+                    setattr(instanceGlyph, attributeName, value)
 
             return instanceGlyph
         return
