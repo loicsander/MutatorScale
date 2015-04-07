@@ -45,7 +45,7 @@ def getRefStems(font, slantedSection=False):
             baseGlyph = font[glyphName]
 
             # removing overlap
-            glyph = singleContourGlyph(baseGlyph)
+            glyph = removeOverlap(baseGlyph)
             width = glyph.width
 
             glyph.skew(-angle)
@@ -92,7 +92,7 @@ def getSlantAngle(font, returnDegrees=False):
 
         for i in range(2):
             horizontal = hCenter + (i * delta)
-            glyph = singleContourGlyph(testGlyph)
+            glyph = removeOverlap(testGlyph)
             intersections.append(intersect(glyph, horizontal, True))
 
         if len(intersections) > 1:
@@ -105,26 +105,32 @@ def getSlantAngle(font, returnDegrees=False):
                     return round(degrees(angle), 2)
     return 0
 
-def singleContourGlyph(glyph):
+def removeOverlap(glyph):
+
+    toRFGlyph = RGlyph()
+    toRFpen = toRFGlyph.getPen()
+    glyph.draw(toRFpen)
 
     singleContourGlyph = RGlyph()
     singleContourGlyph.width = glyph.width
+    singleContourGlyph.name = glyph.name
     pointPen = singleContourGlyph.getPointPen()
-    glyph.drawPoints(pointPen)
 
-    if len(glyph) > 1:
+    if len(toRFGlyph) > 1:
 
         booleanGlyphs = []
 
-        for c in singleContourGlyph.contours:
+        for c in toRFGlyph.contours:
             b = BooleanGlyph()
             pen = b.getPen()
             c.draw(pen)
             booleanGlyphs.append(b)
 
-            singleContourGlyph.clear()
-            finalBooleanGlyph = reduce(lambda g1, g2: g1 | g2, booleanGlyphs)
-            finalBooleanGlyph.drawPoints(pointPen)
+        finalBooleanGlyph = reduce(lambda g1, g2: g1 | g2, booleanGlyphs)
+        finalBooleanGlyph.drawPoints(pointPen)
+
+    else:
+        glyph.drawPoints(pointPen)
 
     return singleContourGlyph
 
@@ -155,12 +161,30 @@ def intersect(glyph, where, isHorizontal):
             if len(returnedSegments) > 1:
                 intersectionPoints = findDuplicatePoints(returnedSegments)
                 if len(intersectionPoints):
-                    box = arrayTools.calcBounds(segment)
+                    box = calcBounds(segment)
                     intersectionPoints = [point for point in intersectionPoints if arrayTools.pointInRect(point, box)]
                     glyphIntersections.extend(intersectionPoints)
 
     return glyphIntersections
 
+def calcBounds(points):
+    """
+    Return rectangular bounds of a list of points.
+    Similar to fontTools’ calcBounds only with rounding added,
+    rounding is required for the test in intersect() to work.
+    """
+    xMin, xMax, yMin, yMax = None, None, None, None
+    for (x, y) in points:
+        for xRef in [xMin, xMax]:
+            if xRef is None: xMin, xMax = x, x
+        for yRef in [yMin, yMax]:
+            if yRef is None: yMin, yMax = y, y
+        if x > xMax: xMax = x
+        if x < xMin: xMin = x
+        if y > yMax: yMax = y
+        if y < yMin: yMin = y
+    box = [round(value, 4) for value in [xMin, yMin, xMax, yMax]]
+    return tuple(box)
 
 def findDuplicatePoints(segments):
     counter = {}
@@ -231,9 +255,27 @@ if __name__ == '__main__':
 
         def setUp(self):
             libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
-            singleFontPath = u'testFonts/two-axes/regular-low-contrast.ufo'
+            singleFontPath = u'testFonts/isotropic-anisotropic/regular-mid-contrast.ufo'
             fontPath = os.path.join(libFolder, singleFontPath)
             self.font = Font(fontPath)
+
+        def test_intersect_horizontal(self):
+            glyph = self.font['I']
+            yCenter = self.font.info.capHeight / 2
+            intersections = intersect(glyph, yCenter, True)
+            self.assertEqual(intersections, [(234.0, 375.0), (134.0, 375.0)])
+
+        def test_intersect_vertical(self):
+            glyph = self.font['H']
+            xCenter = glyph.width / 2
+            intersections = intersect(glyph, xCenter, False)
+            self.assertEqual(intersections, [(426.5, 356.0), (426.5, 396.0)])
+
+        def test_intersect_vertical_with_overlap_removed(self):
+            glyph = removeOverlap(self.font['H'])
+            xCenter = glyph.width / 2
+            intersections = intersect(glyph, xCenter, False)
+            self.assertEqual(intersections, [(426.5, 356.0), (426.5, 396.0)])
 
         def test_getRefStems(self):
             stems = getRefStems(self.font)
