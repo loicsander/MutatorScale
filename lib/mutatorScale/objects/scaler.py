@@ -162,15 +162,16 @@ class MutatorScaleEngine:
             for master in masters:
 
                 xScale, yScale = master.getScale()
+                vstem, hstem = master.getStems()
                 yScales.append(yScale)
 
-                if glyphName in master:
+                if glyphName in master and vstem is not None and hstem is not None:
                     masterGlyph = master[glyphName]
 
                     if twoAxes == True:
                         axis = {
-                            'vstem': master.vstem * xScale,
-                            'hstem': master.hstem * yScale
+                            'vstem': vstem * xScale,
+                            'hstem': hstem * yScale
                             }
                     else:
 
@@ -184,7 +185,7 @@ class MutatorScaleEngine:
                                 angles.append(angle)
 
                         axis = {
-                            'stem': master.vstem * xScale
+                            'stem': vstem * xScale
                         }
 
                     mutatorMasters.append((Location(**axis), masterGlyph))
