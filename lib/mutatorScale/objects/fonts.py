@@ -4,23 +4,32 @@ from __future__ import division
 from mutatorScale.objects.glyphs import MathGlyph
 from mutatorScale.utilities.fontUtils import makeListFontName, getRefStems, getSlantAngle
 
-class ScaleFont(object):
-    '''
-    Object acting partly like a font, i.e. a collection of glyphs.
-    Receives transformation parameters that are applied indistinctly to all of its glyphs.
-    '''
+from fontTools.pens.boundsPen import BoundsPen
 
+class ScaleFont(object):
+    """
+    A ScaleFont takes a font object (Robofab or Defcon) and a scale setting,
+    it is then ready to return any number of scaled glyphs.
+
+    Usage:
+        smallFont = ScaleFont(font, 0.5)
+        small_Glyph_A = smallFont.getGlyph('A')
+    Or:
+        smallFont = ScaleFont(font)
+        smallFont.setScale((1.05, 490, 'capHeight'))
+    """
     def __init__(self, font, scale=None):
         self.glyphs = font
-        self.heights = {heightName:getattr(font.info, heightName) for heightName in ['capHeight','ascender','xHeight','descender']}
-        self.name = '%s > %s' % (font.info.familyName, font.info.styleName)
-        self.italicAngle = -getSlantAngle(font, True)
         self.scale = scale
+        self.heights = { heightName:getattr(font.info, heightName) for heightName in ['capHeight','ascender','xHeight','descender'] }
+        self.name = makeListFontName(font)
+        self.italicAngle = -getSlantAngle(font, True)
+
         if scale is not None:
             self.setScale(scale)
 
     def __repr__(self):
-        return '<%s %s>' % (self.__class__.__name__, self.name, self.scale)
+        return '<{className} {fontName}>'.format(className = self.__class__.__name__, fontName = self.name)
 
     def __getitem__(self, key):
         return self.getGlyph(key)
@@ -31,7 +40,7 @@ class ScaleFont(object):
     def keys(self):
         return self.glyphs.keys()
 
-    def glyphsNotEmpty(self):
+    def get_notEmpty_glyphs_names(self):
         glyphs = self.glyphs
         glyphNames = [glyph.name for glyph in glyphs if (not glyph.isEmpty() and not 'space' in glyph.name)]
         return glyphNames
@@ -50,16 +59,15 @@ class ScaleFont(object):
         return self.scale
 
     def setScale(self, scale):
-        '''
-        Setting scale for the font:
-        – either a simple (x, y) scale tuple
-        – or a tuple in the form (width/x, targetHeight, referenceHeight)
-        '''
+        """ Setting scale for the font.
 
-        if len(scale) == 1:
-            self.scale = (scale, scale)
-
-        elif len(scale) == 2:
+        – Either a simple (x, y) scale tuple;
+        – or a tuple in the form (width, targetHeight, referenceHeight).
+            – x, y, width should be floats;
+            – targetHeight should be an int or float;
+            – referenceHeight can be either a string or float/int.
+        """
+        if len(scale) == 2:
             self.scale = scale
 
         elif len(scale) == 3:
@@ -101,8 +109,10 @@ class ScaleFont(object):
 
     def getGlyphHeight(self, glyphName):
         glyph = self.glyphs[glyphName]
-        if glyph.box is not None:
-            return glyph.box[3] - glyph.box[1]
+        if not glyph.isEmpty():
+            pen = BoundsPens(self.glyphs)
+            glyph.draw(pen)
+            return pen.bounds
         return
 
     def getGlyph(self, glyphName):
@@ -115,11 +125,10 @@ class ScaleFont(object):
             return KeyError
 
     def scaleGlyph(self, glyph, scale):
-        '''
-        Custom implementation of a glyph scaling method that doesn’t scale components
-        but does scale their offset coordinates.
-        '''
-
+        """
+        Return a glyph scaled according to the font’s scale settings,
+        if glyph has components, reset scaling on each component but keep scaled offset coordinates.
+        """
         glyph = MathGlyph(glyph)
         italicAngle = self.italicAngle
         # Skew to an upright position to prevent the slant angle from changing because of scaling
@@ -141,17 +150,15 @@ class ScaleFont(object):
         return glyph
 
 class MutatorScaleFont(ScaleFont):
-    '''
-    Subclass of a ScaleFont that has reference values allowing its use in a MutatorMath context.
-    '''
+    """ Subclass extending a ScaleFont and adding reference stem values to be used inside a MutatorScaleEngine."""
 
-    def __init__(self, font, stems=None, scale=(1, 1), stemsWithSlantedSection=False):
+    def __init__(self, font, scale=(1, 1), stems=None, stemsWithSlantedSection=False):
         super(MutatorScaleFont, self).__init__(font, scale)
         self.stemsWithSlantedSection = stemsWithSlantedSection
         self.processDimensions(font, stems)
 
     def __repr__(self):
-        return '<%s %s refStems:%s,%s>' % (self.__class__.__name__, self.name, self._refVstem, self._refHstem)
+        return '<{className} {fontName}>'.format(className=self.__class__.__name__, fontName=self.name)
 
     def processDimensions(self, font, stems=None):
         refVstem, refHstem = getRefStems(font, self.stemsWithSlantedSection)
