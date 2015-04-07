@@ -346,6 +346,11 @@ if __name__ == '__main__':
                     hasGlyph = scaler.hasGlyph(glyphName)
                     self.assertTrue(hasGlyph)
 
+        def test_get_list_of_non_empty_glyph(self):
+            """Checking if glyph is present among all scaling masters."""
+            for scaler in self.scalers:
+
+
         def test_setting_up_simple_scale(self):
             """Test setting up simple scale on a MutatorScaleEngine."""
             for scaler in self.scalers:
