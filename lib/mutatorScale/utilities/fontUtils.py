@@ -1,9 +1,11 @@
 #coding=utf-8
 from __future__ import division
+from math import atan2, tan, hypot, cos, degrees, radians
 
 from robofab.world import RGlyph
-from math import atan2, tan, hypot, cos, degrees, radians
-from fontTools.misc.bezierTools import splitCubic
+import fontTools
+import fontTools.misc.bezierTools as bezierTools
+import fontTools.misc.arrayTools as arrayTools
 from fontTools.pens.boundsPen import BoundsPen
 from mutatorScale.booleanOperations.booleanGlyph import BooleanGlyph
 from mutatorScale.pens.utilityPens import CollectSegmentsPen
@@ -126,7 +128,7 @@ def singleContourGlyph(glyph):
 def intersect(glyph, where, isHorizontal):
     """
     Intersection of a glyph with a horizontal or vertical line.
-    Intersects each segment of a glyph using fontTools splitCubic and splitLine methods.
+    Intersects each segment of a glyph using fontTools bezierTools.splitCubic and splitLine methods.
     """
     pen = CollectSegmentsPen()
     glyph.draw(pen)
@@ -144,13 +146,13 @@ def intersect(glyph, where, isHorizontal):
                 returnedSegments = splitLine(pt1, pt2, where, int(isHorizontal))
             elif length == 4:
                 pt1, pt2, pt3, pt4 = segment
-                returnedSegments = splitCubic(pt1, pt2, pt3, pt4, where, int(isHorizontal))
+                returnedSegments = bezierTools.splitCubic(pt1, pt2, pt3, pt4, where, int(isHorizontal))
 
             if len(returnedSegments) > 1:
                 intersectionPoints = findDuplicatePoints(returnedSegments)
                 if len(intersectionPoints):
-                    box = boundingBox(segment)
-                    intersectionPoints = [point for point in intersectionPoints if inRect(point, box)]
+                    box = arrayTools.calcBounds(segment)
+                    intersectionPoints = [point for point in intersectionPoints if arrayTools.pointInRect(point, box)]
                     glyphIntersections.extend(intersectionPoints)
 
     return glyphIntersections
@@ -166,29 +168,6 @@ def findDuplicatePoints(segments):
             elif not counter.has_key(p):
                 counter[p] = 1
     return [key for key in counter if counter[key] > 1]
-
-
-def inRect(point, box):
-    xMin, yMin, xMax, yMax = box
-    x, y = point
-    xIn = xMin <= x <= xMax
-    yIn = yMin <= y <= yMax
-    return xIn == yIn == True
-
-
-def boundingBox(points):
-    xMin, xMax, yMin, yMax = None, None, None, None
-    for (x, y) in points:
-        for xRef in [xMin, xMax]:
-            if xRef is None: xMin, xMax = x, x
-        for yRef in [yMin, yMax]:
-            if yRef is None: yMin, yMax = y, y
-        if x > xMax: xMax = x
-        if x < xMin: xMin = x
-        if y > yMax: yMax = y
-        if y < yMin: yMin = y
-    box = [round(value, 4) for value in [xMin, yMin, xMax, yMax]]
-    return tuple(box)
 
 # had to add that splitLine method from Robofont’s version of fontTools
 # using fontTools 2.4’s method didn’t work, don’t know why.
@@ -237,3 +216,22 @@ def splitLine(pt1, pt2, where, isHorizontal):
         return [(pt1, midPt), (midPt, pt2)]
     else:
         return [(pt1, pt2)]
+
+if __name__ == '__main__':
+
+    import os
+    import unittest
+    from defcon import Font
+
+    class FontUtilsTests(unittest.TestCase):
+
+        def setUp(self):
+            libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
+            singleFontPath = u'testFonts/two-axes/regular-low-contrast.ufo'
+            fontPath = os.path.join(libFolder, singleFontPath)
+            self.font = Font(fontPath)
+
+        def test_getRefStems(self):
+            stems = getRefStems(self.font)
+
+    unittest.main()
