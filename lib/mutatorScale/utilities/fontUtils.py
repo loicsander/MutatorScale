@@ -9,25 +9,26 @@ from mutatorScale.booleanOperations.booleanGlyph import BooleanGlyph
 from mutatorScale.pens.utilityPens import CollectSegmentsPen
 
 def makeListFontName(font):
-    '''
-    Returns a font name in the form: 'Family name > style name'.
+    """
+    Return a font name in the form: 'Family name > style name'.
     The separator allows to easily split this full name later on with name.split(' > ').
-    '''
+    """
+    separator = '-'
     familyName = font.info.familyName
     styleName = font.info.styleName
     if familyName is None:
         familyName = font.info.familyName = 'Unnamed'
     if styleName is None:
         styleName = font.info.styleName = 'Unnamed'
-    return ' > '.join([familyName, styleName])
+    return '{familyName} {separator} {styleName}'.format(familyName=familyName, separator=separator, styleName=styleName)
 
 
 def getRefStems(font, slantedSection=False):
-    '''
+    """
     Looks for stem values to serve as reference for a font in an interpolation scheme,
     only one typical value is returned for both horizontal and vertical stems.
     The method intersets the thick stem of a capital I and thin stem of a capital H.
-    '''
+    """
     stems = []
     angle = getSlantAngle(font, True)
 
@@ -73,9 +74,9 @@ def getRefStems(font, slantedSection=False):
 
 
 def getSlantAngle(font, returnDegrees=False):
-    '''
+    """
     Returns the probable slant/italic angle of a font measuring the slant of a capital I.
-    '''
+    """
     if 'I' in font:
         testGlyph = font['I']
         xMin, yMin, xMax, yMax = getGlyphBox(testGlyph)
@@ -123,10 +124,10 @@ def singleContourGlyph(glyph):
 
 
 def intersect(glyph, where, isHorizontal):
-    '''
+    """
     Intersection of a glyph with a horizontal or vertical line.
     Intersects each segment of a glyph using fontTools splitCubic and splitLine methods.
-    '''
+    """
     pen = CollectSegmentsPen()
     glyph.draw(pen)
     nakedGlyph = pen.getSegments()
