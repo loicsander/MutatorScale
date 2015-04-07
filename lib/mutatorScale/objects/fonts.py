@@ -190,3 +190,22 @@ class MutatorScaleFont(ScaleFont):
     @hstem.setter
     def hstem(self, stem):
         self._refHstem = stem
+
+import unittest
+
+class ScaleFontTest(unittest.TestCase):
+
+    def setUp(self):
+        import os
+        libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
+        singleFont = u'testFonts/two-axes/regular-low-contrast.ufo'
+        from defcon import Font
+        fontPath = os.path.join(libFolder, singleFont)
+        font = Font(fontPath)
+        self.smallFont = ScaleFont(font, (0.5, 0.4))
+
+    def test_setScale_with_values(self):
+        """Test changing scale with x, y values."""
+        self.smallFont.setScale((0.85, 0.79))
+
+unittest.main()
