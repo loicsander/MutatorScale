@@ -82,7 +82,7 @@ class ScaleFont(object):
                 if referenceHeight in self.heights:
                     referenceHeightValue = self.heights[referenceHeight]
                 elif referenceHeight in self.glyphs:
-                    referenceHeightValue = self.getGlyphHeight(referenceHeight)
+                    referenceHeightValue = self._getGlyphHeight(referenceHeight)
                     if referenceHeightValue is None:
                         referenceHeightValue = 1
                 else:
@@ -92,7 +92,7 @@ class ScaleFont(object):
                 if targetHeight in self.heights:
                     targetHeightValue = self.heights[targetHeight]
                 elif targetHeight in self.glyphs:
-                    targetHeightValue = self.getGlyphHeight(targetHeight)
+                    targetHeightValue = self._getGlyphHeight(targetHeight)
                     if targetHeightValue is None:
                         targetHeightValue = referenceHeightValue
                 else:
@@ -107,7 +107,7 @@ class ScaleFont(object):
                 self.scale = (x * xy, xy)
 
 
-    def getGlyphHeight(self, glyphName):
+    def _getGlyphHeight(self, glyphName):
         glyph = self.glyphs[glyphName]
         if not glyph.isEmpty():
             pen = BoundsPens(self.glyphs)
@@ -116,15 +116,21 @@ class ScaleFont(object):
         return
 
     def getGlyph(self, glyphName):
+        """Return a scaled glyph as a MathGlyph instance."""
         if glyphName in self.glyphs:
             glyph = self.glyphs[glyphName]
             scale = self.scale
-            scaledGlyph = self.scaleGlyph(glyph, scale)
+            scaledGlyph = self._scaleGlyph(glyph, scale)
             return scaledGlyph
         else:
             return KeyError
 
-    def scaleGlyph(self, glyph, scale):
+    def extractGlyph(self, glyphName, glyph):
+        scaledGlyph = self.getGlyph(glyphName)
+        pen = glyph.getPen()
+        scaledGlyph.draw(pen)
+
+    def _scaleGlyph(self, glyph, scale):
         """
         Return a glyph scaled according to the font’s scale settings,
         if glyph has components, reset scaling on each component but keep scaled offset coordinates.
@@ -191,21 +197,69 @@ class MutatorScaleFont(ScaleFont):
     def hstem(self, stem):
         self._refHstem = stem
 
-import unittest
+if __name__ == '__main__':
 
-class ScaleFontTest(unittest.TestCase):
+    import unittest
+    import os
+    from defcon import Font
 
-    def setUp(self):
-        import os
-        libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
-        singleFont = u'testFonts/two-axes/regular-low-contrast.ufo'
-        from defcon import Font
-        fontPath = os.path.join(libFolder, singleFont)
-        font = Font(fontPath)
-        self.smallFont = ScaleFont(font, (0.5, 0.4))
+    class ScaleFontsTest(unittest.TestCase):
 
-    def test_setScale_with_values(self):
-        """Test changing scale with x, y values."""
-        self.smallFont.setScale((0.85, 0.79))
+        def setUp(self):
+            libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
+            singleFontPath = u'testFonts/two-axes/regular-low-contrast.ufo'
+            fontPath = os.path.join(libFolder, singleFontPath)
+            font = Font(fontPath)
+            self.smallFont = ScaleFont(font, (0.5, 0.4))
+            self.stemedSmallFont = MutatorScaleFont(font, (0.5, 0.4))
+            self.stemedSmallFont = MutatorScaleFont(font, (0.5, 0.4), stemsWithSlantedSection=True)
 
-unittest.main()
+        def test_setScale_with_values(self):
+            """Test changing scale with x, y values."""
+            for testFont in [self.smallFont, self.stemedSmallFont]:
+                testFont.setScale((0.85, 0.79))
+
+        def test_setScale_with_references(self):
+            """Test changing scale with width, targetHeight, referenceHeight arguments."""
+            for testFont in [self.smallFont, self.stemedSmallFont]:
+                testFont.setScale((1.02, 450, 'capHeight'))
+                testFont.setScale((0.65, 350, 250))
+
+        def test_get_scaled_glyph_as_MathGlyph(self):
+            """Test scaled glyph retrieval."""
+            for testFont in [self.smallFont, self.stemedSmallFont]:
+                for glyphName in ['H', 'Aacute']:
+                    scaledGlyph = testFont.getGlyph(glyphName)
+                    self.assertIsInstance(scaledGlyph, MathGlyph)
+                    scaledGlyph = testFont[glyphName]
+                    self.assertIsInstance(scaledGlyph, MathGlyph)
+
+        def test_extract_scaled_glyph_as_Defcon_Glyph(self):
+            """Test scaled glyph retrieval as a Defcon glyph."""
+            from defcon import Glyph
+            for testFont in [self.smallFont, self.stemedSmallFont]:
+                scaledGlyph = Glyph()
+                for glyphName in ['H', 'Aacute']:
+                    testFont.extractGlyph(glyphName, scaledGlyph)
+                    self.assertIsInstance(scaledGlyph, Glyph)
+
+        def test_extract_scaled_glyph_as_Robofab_Glyph(self):
+            """Test scaled glyph retrieval as a Robofab Glyph."""
+            from robofab.world import RGlyph
+            for testFont in [self.smallFont, self.stemedSmallFont]:
+                scaledGlyph = RGlyph()
+                for glyphName in ['H', 'Aacute']:
+                    testFont.extractGlyph(glyphName, scaledGlyph)
+                    self.assertIsInstance(scaledGlyph, RGlyph)
+
+        def test_set_stems(self):
+            """Test setting stems on a MutatorScaleFont."""
+            self.stemedSmallFont.setStems((100, 40))
+
+        def test_set_stems_separately(self):
+            """Test setting stems separately on a MutatorScaleFont."""
+            self.stemedSmallFont.vstem = 120
+            self.stemedSmallFont.hstem = 50
+
+
+    unittest.main()
