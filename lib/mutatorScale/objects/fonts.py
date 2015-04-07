@@ -105,7 +105,6 @@ class ScaleFont(object):
             finally:
                 self.scale = (x * xy, xy)
 
-
     def _getGlyphHeight(self, glyphName):
         glyph = self.glyphSet[glyphName]
         if not glyph.isEmpty():
