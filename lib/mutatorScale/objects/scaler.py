@@ -301,3 +301,32 @@ class MutatorScaleEngine:
 
     def getMutatorReport(self):
         return self.mutatorErrors
+
+if __name__ == '__main__':
+
+    import unittest
+    import glob
+    from defcon import Font
+
+    class MutatorScaleEngineTest(unittest.TestCase):
+
+        def setUp(self):
+            libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
+            self.scalers = []
+            for fontsFolder in ['two-axes','isotropic-anisotropic']:
+                fonts = []
+                fontsPath = os.path.join(libFolder, fontsFolder)
+                os.chdir(fontPath)
+                for singleFontPath in glob.glob('*.ufo'):
+                    font = Font(singleFontPath)
+                    fonts.append(font)
+                scaler = MutatorScaleEngine(fonts)
+                self.scalers.append(scaler)
+            font = Font(fontPath)
+
+        def test_set(self):
+            """Test setting up a MutatorScaleEngine."""
+            for scaler in self.scalers:
+                scaler.set({'scale':(0.5, 0.4)})
+
+    unittest.main()
