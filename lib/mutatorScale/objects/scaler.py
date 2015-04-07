@@ -56,7 +56,7 @@ class MutatorScaleEngine:
         self.mutatorErrors = []
 
     def __repr__(self):
-        return 'MutatorScaleEngine # %s masters\n- %s\n' % (len(self.masters), '\n- '.join([str(master) for master in self.masters]))
+        return 'MutatorScaleEngine # {0} masters\n- {1}\n'.format(len(self.masters), '\n- '.join([str(master) for master in self.masters]))
 
     def __getitem__(self, key):
         if key in self.masters.keys():
@@ -80,7 +80,7 @@ class MutatorScaleEngine:
 
     def getReferenceGlyphs(self):
         masters = self.masters.values()
-        glyphs = reduce(lambda a, b: list(set(a) & set(b)), [master.glyphsNotEmpty() for master in masters])
+        glyphs = reduce(lambda a, b: list(set(a) & set(b)), [master.get_notEmpty_glyphs_names() for master in masters])
         return glyphs
 
     def set(self, scalingParameters):
@@ -116,7 +116,7 @@ class MutatorScaleEngine:
         Returning a MutatorScaleEngine master.
         '''
         name = makeListFontName(font)
-        master = MutatorScaleFont(font, stems, stemsWithSlantedSection=self.stemsWithSlantedSection)
+        master = MutatorScaleFont(font, stems=stems, stemsWithSlantedSection=self.stemsWithSlantedSection)
         return name, master
 
     def addMaster(self, font, stems=None):
