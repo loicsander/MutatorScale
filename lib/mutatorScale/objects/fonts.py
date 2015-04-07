@@ -23,7 +23,7 @@ class ScaleFont(object):
         smallFont.setScale((1.05, 490, 'capHeight'))
     """
     def __init__(self, font, scale=None):
-        self.glyphs = font
+        self.glyphSet = {glyph.name:glyph for glyph in font}
         self.scale = scale
         self.heights = { heightName:getattr(font.info, heightName) for heightName in ['capHeight','ascender','xHeight','descender'] }
         self.name = makeListFontName(font)
@@ -39,15 +39,10 @@ class ScaleFont(object):
         return self.getGlyph(key)
 
     def __contains__(self, glyphName):
-        return glyphName in self.glyphs
+        return glyphName in self.glyphSet
 
     def keys(self):
-        return self.glyphs.keys()
-
-    def get_notEmpty_glyphs_names(self):
-        glyphs = self.glyphs
-        glyphNames = [glyph.name for glyph in glyphs if (not glyph.isEmpty() and not 'space' in glyph.name)]
-        return glyphNames
+        return self.glyphSet.keys()
 
     def getXScale(self):
         if self.scale is not None:
@@ -85,7 +80,7 @@ class ScaleFont(object):
                 # try parsing referenceHeight to a numeric value
                 if referenceHeight in self.heights:
                     referenceHeightValue = self.heights[referenceHeight]
-                elif referenceHeight in self.glyphs:
+                elif referenceHeight in self.glyphSet:
                     referenceHeightValue = self._getGlyphHeight(referenceHeight)
                     if referenceHeightValue is None:
                         referenceHeightValue = 1
@@ -95,7 +90,7 @@ class ScaleFont(object):
                 # try parsing targetHeight to a numeric value
                 if targetHeight in self.heights:
                     targetHeightValue = self.heights[targetHeight]
-                elif targetHeight in self.glyphs:
+                elif targetHeight in self.glyphSet:
                     targetHeightValue = self._getGlyphHeight(targetHeight)
                     if targetHeightValue is None:
                         targetHeightValue = referenceHeightValue
@@ -112,17 +107,17 @@ class ScaleFont(object):
 
 
     def _getGlyphHeight(self, glyphName):
-        glyph = self.glyphs[glyphName]
+        glyph = self.glyphSet[glyphName]
         if not glyph.isEmpty():
-            pen = BoundsPens(self.glyphs)
+            pen = BoundsPens(self.glyphSet)
             glyph.draw(pen)
             return pen.bounds
         return
 
     def getGlyph(self, glyphName):
         """Return a scaled glyph as a MathGlyph instance."""
-        if glyphName in self.glyphs:
-            glyph = self.glyphs[glyphName]
+        if glyphName in self.glyphSet:
+            glyph = self.glyphSet[glyphName]
             scale = self.scale
             scaledGlyph = self._scaleGlyph(glyph, scale)
             return scaledGlyph
@@ -131,6 +126,8 @@ class ScaleFont(object):
 
     def extractGlyph(self, glyphName, glyph):
         scaledGlyph = self.getGlyph(glyphName)
+        for attribute in ['name','unicodes','width']:
+            setattr(glyph, attribute, getattr(scaledGlyph, attribute))
         pen = glyph.getPen()
         scaledGlyph.draw(pen)
 
@@ -205,11 +202,13 @@ if __name__ == '__main__':
 
     import unittest
     import os
+    from time import time
     from defcon import Font
 
     class ScaleFontsTest(unittest.TestCase):
 
         def setUp(self):
+            self.glyphNames = ['H', 'Aacute', 'A', 'O', 'B']
             libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
             singleFontPath = u'testFonts/two-axes/regular-low-contrast.ufo'
             fontPath = os.path.join(libFolder, singleFontPath)
@@ -232,7 +231,7 @@ if __name__ == '__main__':
         def test_get_scaled_glyph_as_MathGlyph(self):
             """Test scaled glyph retrieval."""
             for testFont in [self.smallFont, self.stemedSmallFont]:
-                for glyphName in ['H', 'Aacute']:
+                for glyphName in self.glyphNames:
                     scaledGlyph = testFont.getGlyph(glyphName)
                     self.assertIsInstance(scaledGlyph, MathGlyph)
                     scaledGlyph = testFont[glyphName]
@@ -243,16 +242,17 @@ if __name__ == '__main__':
             from defcon import Glyph
             for testFont in [self.smallFont, self.stemedSmallFont]:
                 scaledGlyph = Glyph()
-                for glyphName in ['H', 'Aacute']:
+                for glyphName in self.glyphNames:
                     testFont.extractGlyph(glyphName, scaledGlyph)
                     self.assertIsInstance(scaledGlyph, Glyph)
+                    self.assertEqual(scaledGlyph.name, glyphName)
 
         def test_extract_scaled_glyph_as_Robofab_Glyph(self):
             """Test scaled glyph retrieval as a Robofab Glyph."""
             from robofab.world import RGlyph
             for testFont in [self.smallFont, self.stemedSmallFont]:
                 scaledGlyph = RGlyph()
-                for glyphName in ['H', 'Aacute']:
+                for glyphName in self.glyphNames:
                     testFont.extractGlyph(glyphName, scaledGlyph)
                     self.assertIsInstance(scaledGlyph, RGlyph)
 
@@ -264,6 +264,5 @@ if __name__ == '__main__':
             """Test setting stems separately on a MutatorScaleFont."""
             self.stemedSmallFont.vstem = 120
             self.stemedSmallFont.hstem = 50
-
 
     unittest.main()

@@ -82,10 +82,11 @@ class MutatorScaleEngine:
     def hasGlyph(self, glyphName):
         return glyphName in self._availableGlyphs
 
-    def getReferenceGlyphs(self):
+    def getReferenceGlyphNames(self):
         masters = self.masters.values()
-        glyphs = reduce(lambda a, b: list(set(a) & set(b)), [master.get_notEmpty_glyphs_names() for master in masters])
-        return glyphs
+        glyphNames = self._availableGlyphs
+        validGlyphs_names = reduce(lambda a, b: list(set(a) & set(b)), [[glyphName for glyphName in glyphNames if len(master.glyphSet[glyphName])] for master in masters])
+        return validGlyphs_names
 
     def set(self, scalingParameters):
         """Define scaling parameters.
@@ -349,7 +350,7 @@ if __name__ == '__main__':
         def test_get_list_of_non_empty_glyph(self):
             """Checking if glyph is present among all scaling masters."""
             for scaler in self.scalers:
-
+                scaler.getReferenceGlyphNames()
 
         def test_setting_up_simple_scale(self):
             """Test setting up simple scale on a MutatorScaleEngine."""
