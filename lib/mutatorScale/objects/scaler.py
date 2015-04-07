@@ -11,7 +11,7 @@ from mutatorScale.utilities.fontUtils import makeListFontName
 from mutatorScale.utilities.numbersUtils import mapValue
 
 class MutatorScaleEngine:
-    '''
+    """
     This object is built to handle the interpolated scaling of glyphs using MutatorMath.
     It requires a list of fonts (at least two) from which it determines which kind of interpolation it can achieve.
     Maybe I should state the obvious: the whole process is based on the assumption that the provided fonts are compatible for interpolation.
@@ -37,12 +37,12 @@ class MutatorScaleEngine:
 
     Here’s how it goes:
 
-    > scaler = MutatorScaleEngine(ListOfFonts)
-    > scaler.set({
+    >>> scaler = MutatorScaleEngine(ListOfFonts)
+    >>> scaler.set({
         'scale': (1.03, 0.85)
         })
-    > scaler.getScaledGlyph('a', ())
-    '''
+    >>> scaler.getScaledGlyph('a', ())
+    """
 
     errorGlyph = errorGlyph()
 
@@ -84,10 +84,11 @@ class MutatorScaleEngine:
         return glyphs
 
     def set(self, scalingParameters):
-        '''
-        Defining the scaling parameters.
-        '''
+        """Define scaling parameters.
 
+        Collect relevant data in the various forms it can be input,
+        produce a scale definition relevant to a ScaleFont object.
+        """
         scale = (1, 1)
 
         if scalingParameters.has_key('width'):
@@ -112,14 +113,13 @@ class MutatorScaleEngine:
         self._currentScale = scale
 
     def makeMaster(self, font, stems=None):
-        '''
-        Returning a MutatorScaleEngine master.
-        '''
+        """Return a MutatorScaleFont."""
         name = makeListFontName(font)
         master = MutatorScaleFont(font, stems=stems, stemsWithSlantedSection=self.stemsWithSlantedSection)
         return name, master
 
     def addMaster(self, font, stems=None):
+        """Add a MutatorScaleFont to masters."""
         name, master = self.makeMaster(font, stems)
         if self._currentScale is not None:
             master.setScale(self._currentScale)
@@ -127,28 +127,27 @@ class MutatorScaleEngine:
         self._canUseTwoAxes = self.checkForTwoAxes()
 
     def removeMaster(self, font):
+        """Remove a MutatorScaleFont from masters."""
         name = makeListFontName(font)
         if self.masters.has_key(name):
             self.masters.pop(name, 0)
         self._canUseTwoAxes = self.checkForTwoAxes()
 
     def getScaledGlyph(self, glyphName, stemTarget, slantCorrection=True):
-        '''
-        Returns an interpolated & scaled glyph according to set parameters and given masters.
-        '''
+        """Return an interpolated & scaled glyph according to set parameters and given masters."""
         masters = self.masters.values()
         twoAxes = self._canUseTwoAxes
         mutatorMasters = []
         yScales = []
         angles = []
 
-        '''
+        """
         Gather master glyphs for interpolation:
         each master glyph is scaled down according to set parameter,
-        it is then inserted in a mutator design space with scaled down stem values
-        so asking for the initial stem values of a scaled down glyphName
+        it is then inserted in a mutator design space with scaled down stem values.
+        Asking for the initial stem values of a scaled down glyphName
         will result in an scaled glyph which will retain specified stem widths.
-        '''
+        """
 
         if len(masters) > 1:
 
@@ -203,7 +202,7 @@ class MutatorScaleEngine:
                 self.mutatorErrors[-1]['masters'] = mutatorMasters
 
             if medianAngle and slantCorrection == True:
-                # if masters were skew to upright position
+                # if masters were skewed to upright position
                 # skew instance back to probable slant angle
                 instanceGlyph.skew(-medianAngle)
 
@@ -230,12 +229,12 @@ class MutatorScaleEngine:
             return
 
     def _getTargetLocation(self, stemTarget, masters, twoAxes, (xScale, yScale)):
-        '''
-        Returns a proper Location object for a scaled glyph instance,
+        """
+        Return a proper Location object for a scaled glyph instance,
         the essential part lies in the conversion of stem values,
         so that in anisotropic mode, a MutatorScaleEngine can attempt to produce
         a glyph with proper stem widths without requiring two-axes interpolation.
-        '''
+        """
 
         targetVstem, targetHstem = None, None
 
@@ -245,8 +244,8 @@ class MutatorScaleEngine:
         if targetHstem is not None:
 
             if twoAxes == False:
-                vStems = [master.vstem*xScale for master in masters]
-                hStems = [master.hstem*yScale for master in masters]
+                vStems = [master.vstem * xScale for master in masters]
+                hStems = [master.hstem * yScale for master in masters]
                 (minVStem, minStemIndex), (maxVStem, maxStemIndex) = self._getExtremes(vStems)
                 vStemSpan = (minVStem, maxVStem)
                 hStemSpan = hStems[minStemIndex], hStems[maxStemIndex]
@@ -261,10 +260,10 @@ class MutatorScaleEngine:
             return Location(stem=targetVstem)
 
     def _getExtremes(self, values):
-        '''
-        Returns the minimum and maximum in a list of values with indices,
+        """
+        Return the minimum and maximum in a list of values with indices,
         this implementation was necessary to distinguish indices when min and max value happen to be equal (without being the same value per se).
-        '''
+        """
         if len(values) > 1:
             baseValue = (values[0], 0)
             smallest, largest = baseValue, baseValue
@@ -277,18 +276,17 @@ class MutatorScaleEngine:
         return
 
     def checkForTwoAxes(self, masters=None):
-
+        """
+        Check conditions are met for two-axis interpolation in MutatorMath:
+        1. At least two identical values (to bind a new axis to the first axis)
+        2. At least one value different from the others (to be able to have a differential on second axis)
+        """
         if masters is None:
             masters = self.masters.values()
 
         if len(masters) > 2:
             values = [master.hstem for master in masters]
 
-            '''
-            Checking if the conditions are met to have two-axis interpolation:
-            1. At least two identical values (to bind a new axis to the first axis)
-            2. At least one value different from the others (to be able to build a second axis)
-            '''
             length = len(values)
             if length:
                 identicalValues = 0
