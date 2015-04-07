@@ -325,7 +325,7 @@ if __name__ == '__main__':
             libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
             libFolder = os.path.join(libFolder, 'testFonts/')
             self.scalers = []
-            self.glyphNames = ['H','Aacute']
+            self.glyphNames = ['H','I']
             for fontsFolder in ['two-axes','isotropic-anisotropic']:
                 fonts = []
                 fontsPath = os.path.join(libFolder, fontsFolder)
@@ -343,5 +343,26 @@ if __name__ == '__main__':
                 for glyphName in self.glyphNames:
                     hasGlyph = scaler.hasGlyph(glyphName)
                     self.assertTrue(hasGlyph)
+
+        def test_setting_up_simple_scale(self):
+            """Test setting up simple scale on a MutatorScaleEngine."""
+            for scaler in self.scalers:
+                scaler.set({'scale':(0.5, 0.4)})
+                for glyphName in self.glyphNames:
+                    scaler.getScaledGlyph(glyphName, (100, 40))
+
+        def test_setting_up_width(self):
+            """Test setting up width scaling on a MutatorScaleEngine."""
+            for scaler in self.scalers:
+                scaler.set({'width':0.75})
+                for glyphName in self.glyphNames:
+                    scaler.getScaledGlyph(glyphName, (100, 40))
+
+        def test_setting_up_scale_by_reference(self):
+            """Test setting up scale on a MutatorScaleEngine."""
+            for scaler in self.scalers:
+                scaler.set({'scale':(0.5, 0.4)})
+                for glyphName in self.glyphNames:
+                    scaler.getScaledGlyph(glyphName, (100, 40))
 
     unittest.main()
