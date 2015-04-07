@@ -2,6 +2,10 @@
 from __future__ import division
 from math import atan2, tan, hypot, cos, degrees, radians
 
+import sys
+sys.path.insert(0, 'Users/loicsander/Documents/100 CodeLibs/MutatorScale/lib/')
+import mutatorScale
+
 from robofab.world import RGlyph
 import fontTools
 import fontTools.misc.bezierTools as bezierTools

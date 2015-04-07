@@ -5,6 +5,10 @@ from robofab.world import RGlyph
 from mutatorMath.objects.location import Location
 from mutatorMath.objects.mutator import buildMutator
 
+import sys
+sys.path.insert(0, 'Users/loicsander/Documents/100 CodeLibs/MutatorScale/lib/')
+import mutatorScale
+
 from mutatorScale.objects.fonts import MutatorScaleFont
 from mutatorScale.objects.glyphs import errorGlyph
 from mutatorScale.utilities.fontUtils import makeListFontName
