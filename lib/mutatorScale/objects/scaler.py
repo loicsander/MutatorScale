@@ -116,7 +116,7 @@ class MutatorScaleEngine:
 
         self._currentScale = scale
 
-    def makeMaster(self, font, stems=None):
+    def _makeMaster(self, font, stems=None):
         """Return a MutatorScaleFont."""
         name = makeListFontName(font)
         master = MutatorScaleFont(font, stems=stems, stemsWithSlantedSection=self.stemsWithSlantedSection)
@@ -124,7 +124,7 @@ class MutatorScaleEngine:
 
     def addMaster(self, font, stems=None):
         """Add a MutatorScaleFont to masters."""
-        name, master = self.makeMaster(font, stems)
+        name, master = self._makeMaster(font, stems)
         if self._currentScale is not None:
             master.setScale(self._currentScale)
         self.masters[name] = master
@@ -325,6 +325,7 @@ if __name__ == '__main__':
             libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
             libFolder = os.path.join(libFolder, 'testFonts/')
             self.scalers = []
+            self.loadedFonts = []
             self.glyphNames = ['H','I']
             for fontsFolder in ['two-axes','isotropic-anisotropic']:
                 fonts = []
@@ -334,6 +335,7 @@ if __name__ == '__main__':
                     font = Font(singleFontPath)
                     if 'Italic' not in font.info.styleName:
                         fonts.append(font)
+                        self.loadedFonts.append(font)
                 scaler = MutatorScaleEngine(fonts)
                 self.scalers.append(scaler)
 
@@ -361,8 +363,26 @@ if __name__ == '__main__':
         def test_setting_up_scale_by_reference(self):
             """Test setting up scale on a MutatorScaleEngine."""
             for scaler in self.scalers:
-                scaler.set({'scale':(0.5, 0.4)})
+                scaler.set({
+                    'targetHeight': 490,
+                    'referenceHeight': 'capHeight'
+                    })
                 for glyphName in self.glyphNames:
                     scaler.getScaledGlyph(glyphName, (100, 40))
+
+        def test_adding_master(self):
+            libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
+            libFolder = os.path.join(libFolder, 'testFonts/')
+            newFontPath = os.path.join(libFolder, 'isotropic-anisotropic/bold-mid-contrast.ufo')
+            newFont = Font(newFontPath)
+            scaler = self.scalers[0]
+            scaler.addMaster(newFont)
+            self.assertEqual(len(scaler), 5)
+
+        def test_removing_master(self):
+            scaler = self.scalers[0]
+            fontToRemove = self.loadedFonts[0]
+            scaler.removeMaster(fontToRemove)
+            self.assertEqual(len(scaler), 3)
 
     unittest.main()
