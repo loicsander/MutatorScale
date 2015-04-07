@@ -2,6 +2,10 @@
 from __future__ import division
 from math import atan2, tan, hypot, cos, degrees, radians
 
+import sys
+sys.path.insert(0, u'/Users/loicsander/Documents/100 CodeLibs/MutatorScale/lib')
+import mutatorScale
+
 from robofab.world import RGlyph
 import fontTools
 import fontTools.misc.bezierTools as bezierTools
@@ -106,21 +110,21 @@ def singleContourGlyph(glyph):
     singleContourGlyph = RGlyph()
     singleContourGlyph.width = glyph.width
     pointPen = singleContourGlyph.getPointPen()
+    glyph.drawPoints(pointPen)
 
     if len(glyph) > 1:
 
         booleanGlyphs = []
 
-        for c in glyph.contours:
+        for c in singleContourGlyph.contours:
             b = BooleanGlyph()
             pen = b.getPen()
             c.draw(pen)
             booleanGlyphs.append(b)
 
+            singleContourGlyph.clear()
             finalBooleanGlyph = reduce(lambda g1, g2: g1 | g2, booleanGlyphs)
             finalBooleanGlyph.drawPoints(pointPen)
-    else:
-        glyph.drawPoints(pointPen)
 
     return singleContourGlyph
 

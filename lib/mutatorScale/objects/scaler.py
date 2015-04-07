@@ -5,6 +5,10 @@ from robofab.world import RGlyph
 from mutatorMath.objects.location import Location
 from mutatorMath.objects.mutator import buildMutator
 
+import sys
+sys.path.insert(0, u'/Users/loicsander/Documents/100 CodeLibs/MutatorScale/lib')
+import mutatorScale
+
 from mutatorScale.objects.fonts import MutatorScaleFont
 from mutatorScale.objects.glyphs import errorGlyph
 from mutatorScale.utilities.fontUtils import makeListFontName
@@ -51,6 +55,7 @@ class MutatorScaleEngine:
         self._currentScale = None
         self._canUseTwoAxes = False
         self.stemsWithSlantedSection = stemsWithSlantedSection
+        self._availableGlyphs = []
         for font in masterFonts:
             self.addMaster(font)
         self.mutatorErrors = []
@@ -75,8 +80,7 @@ class MutatorScaleEngine:
         return fontName in self.masters
 
     def hasGlyph(self, glyphName):
-        masters = self.masters.values()
-        return bool(reduce(lambda a, b: a * b, [glyphName in master for master in masters]))
+        return glyphName in self._availableGlyphs
 
     def getReferenceGlyphs(self):
         masters = self.masters.values()
@@ -125,6 +129,10 @@ class MutatorScaleEngine:
             master.setScale(self._currentScale)
         self.masters[name] = master
         self._canUseTwoAxes = self.checkForTwoAxes()
+        if not len(self._availableGlyphs):
+            self._availableGlyphs = master.keys()
+        elif len(self._availableGlyphs):
+            self._availableGlyphs = list(set(self._availableGlyphs) & set(master.keys()))
 
     def removeMaster(self, font):
         """Remove a MutatorScaleFont from masters."""
@@ -197,7 +205,8 @@ class MutatorScaleEngine:
             instanceGlyph = self._getInstanceGlyph(targetLocation, mutatorMasters)
 
             if instanceGlyph.name == '_error_':
-                instanceGlyph.unicodes = masters[0][glyphName].unicodes
+                if self.hasGlyph(glyphName):
+                    instanceGlyph.unicodes = masters[0][glyphName].unicodes
                 self.mutatorErrors[-1]['glyph'] = glyphName
                 self.mutatorErrors[-1]['masters'] = mutatorMasters
 
@@ -226,7 +235,7 @@ class MutatorScaleEngine:
                 return instance
         except Exception as e:
             self.mutatorErrors.append({'error':e.message})
-            return
+            return None
 
     def _getTargetLocation(self, stemTarget, masters, twoAxes, (xScale, yScale)):
         """
@@ -302,8 +311,10 @@ class MutatorScaleEngine:
     def getMutatorReport(self):
         return self.mutatorErrors
 
+
 if __name__ == '__main__':
 
+    import os
     import unittest
     import glob
     from defcon import Font
@@ -312,21 +323,25 @@ if __name__ == '__main__':
 
         def setUp(self):
             libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
+            libFolder = os.path.join(libFolder, 'testFonts/')
             self.scalers = []
+            self.glyphNames = ['H','Aacute']
             for fontsFolder in ['two-axes','isotropic-anisotropic']:
                 fonts = []
                 fontsPath = os.path.join(libFolder, fontsFolder)
-                os.chdir(fontPath)
+                os.chdir(fontsPath)
                 for singleFontPath in glob.glob('*.ufo'):
                     font = Font(singleFontPath)
-                    fonts.append(font)
+                    if 'Italic' not in font.info.styleName:
+                        fonts.append(font)
                 scaler = MutatorScaleEngine(fonts)
                 self.scalers.append(scaler)
-            font = Font(fontPath)
 
-        def test_set(self):
-            """Test setting up a MutatorScaleEngine."""
+        def test_if_scalingEngine_has_glyph(self):
+            """Checking if glyph is present among all scaling masters."""
             for scaler in self.scalers:
-                scaler.set({'scale':(0.5, 0.4)})
+                for glyphName in self.glyphNames:
+                    hasGlyph = scaler.hasGlyph(glyphName)
+                    self.assertTrue(hasGlyph)
 
     unittest.main()
