@@ -1,10 +1,6 @@
 #coding=utf-8
 from __future__ import division
 
-import sys
-sys.path.insert(0, u'/Users/loicsander/Documents/100 CodeLibs/MutatorScale/lib')
-import mutatorScale
-
 from mutatorScale.objects.glyphs import MathGlyph
 from mutatorScale.utilities.fontUtils import makeListFontName, getRefStems, getSlantAngle
 
