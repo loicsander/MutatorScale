@@ -1,33 +1,36 @@
 #coding=utf-8
 from __future__ import division
+from math import atan2, tan, hypot, cos, degrees, radians
 
 from robofab.world import RGlyph
-from math import atan2, tan, hypot, cos, degrees, radians
-from fontTools.misc.bezierTools import splitCubic
+import fontTools
+import fontTools.misc.bezierTools as bezierTools
+import fontTools.misc.arrayTools as arrayTools
 from fontTools.pens.boundsPen import BoundsPen
 from mutatorScale.booleanOperations.booleanGlyph import BooleanGlyph
 from mutatorScale.pens.utilityPens import CollectSegmentsPen
 
 def makeListFontName(font):
-    '''
-    Returns a font name in the form: 'Family name > style name'.
+    """
+    Return a font name in the form: 'Family name > style name'.
     The separator allows to easily split this full name later on with name.split(' > ').
-    '''
+    """
+    separator = '-'
     familyName = font.info.familyName
     styleName = font.info.styleName
     if familyName is None:
         familyName = font.info.familyName = 'Unnamed'
     if styleName is None:
         styleName = font.info.styleName = 'Unnamed'
-    return ' > '.join([familyName, styleName])
+    return '{familyName} {separator} {styleName}'.format(familyName=familyName, separator=separator, styleName=styleName)
 
 
 def getRefStems(font, slantedSection=False):
-    '''
+    """
     Looks for stem values to serve as reference for a font in an interpolation scheme,
     only one typical value is returned for both horizontal and vertical stems.
     The method intersets the thick stem of a capital I and thin stem of a capital H.
-    '''
+    """
     stems = []
     angle = getSlantAngle(font, True)
 
@@ -38,7 +41,7 @@ def getRefStems(font, slantedSection=False):
             baseGlyph = font[glyphName]
 
             # removing overlap
-            glyph = singleContourGlyph(baseGlyph)
+            glyph = removeOverlap(baseGlyph)
             width = glyph.width
 
             glyph.skew(-angle)
@@ -73,9 +76,9 @@ def getRefStems(font, slantedSection=False):
 
 
 def getSlantAngle(font, returnDegrees=False):
-    '''
+    """
     Returns the probable slant/italic angle of a font measuring the slant of a capital I.
-    '''
+    """
     if 'I' in font:
         testGlyph = font['I']
         xMin, yMin, xMax, yMax = getGlyphBox(testGlyph)
@@ -85,7 +88,7 @@ def getSlantAngle(font, returnDegrees=False):
 
         for i in range(2):
             horizontal = hCenter + (i * delta)
-            glyph = singleContourGlyph(testGlyph)
+            glyph = removeOverlap(testGlyph)
             intersections.append(intersect(glyph, horizontal, True))
 
         if len(intersections) > 1:
@@ -98,24 +101,30 @@ def getSlantAngle(font, returnDegrees=False):
                     return round(degrees(angle), 2)
     return 0
 
-def singleContourGlyph(glyph):
+def removeOverlap(glyph):
+
+    toRFGlyph = RGlyph()
+    toRFpen = toRFGlyph.getPen()
+    glyph.draw(toRFpen)
 
     singleContourGlyph = RGlyph()
     singleContourGlyph.width = glyph.width
+    singleContourGlyph.name = glyph.name
     pointPen = singleContourGlyph.getPointPen()
 
-    if len(glyph) > 1:
+    if len(toRFGlyph) > 1:
 
         booleanGlyphs = []
 
-        for c in glyph.contours:
+        for c in toRFGlyph.contours:
             b = BooleanGlyph()
             pen = b.getPen()
             c.draw(pen)
             booleanGlyphs.append(b)
 
-            finalBooleanGlyph = reduce(lambda g1, g2: g1 | g2, booleanGlyphs)
-            finalBooleanGlyph.drawPoints(pointPen)
+        finalBooleanGlyph = reduce(lambda g1, g2: g1 | g2, booleanGlyphs)
+        finalBooleanGlyph.drawPoints(pointPen)
+
     else:
         glyph.drawPoints(pointPen)
 
@@ -123,10 +132,10 @@ def singleContourGlyph(glyph):
 
 
 def intersect(glyph, where, isHorizontal):
-    '''
+    """
     Intersection of a glyph with a horizontal or vertical line.
-    Intersects each segment of a glyph using fontTools splitCubic and splitLine methods.
-    '''
+    Intersects each segment of a glyph using fontTools bezierTools.splitCubic and splitLine methods.
+    """
     pen = CollectSegmentsPen()
     glyph.draw(pen)
     nakedGlyph = pen.getSegments()
@@ -143,39 +152,23 @@ def intersect(glyph, where, isHorizontal):
                 returnedSegments = splitLine(pt1, pt2, where, int(isHorizontal))
             elif length == 4:
                 pt1, pt2, pt3, pt4 = segment
-                returnedSegments = splitCubic(pt1, pt2, pt3, pt4, where, int(isHorizontal))
+                returnedSegments = bezierTools.splitCubic(pt1, pt2, pt3, pt4, where, int(isHorizontal))
 
             if len(returnedSegments) > 1:
                 intersectionPoints = findDuplicatePoints(returnedSegments)
                 if len(intersectionPoints):
-                    box = boundingBox(segment)
-                    intersectionPoints = [point for point in intersectionPoints if inRect(point, box)]
+                    box = calcBounds(segment)
+                    intersectionPoints = [point for point in intersectionPoints if arrayTools.pointInRect(point, box)]
                     glyphIntersections.extend(intersectionPoints)
 
     return glyphIntersections
 
-
-def findDuplicatePoints(segments):
-    counter = {}
-    for seg in segments:
-        for (x, y) in seg:
-            p = round(x, 4), round(y, 4)
-            if counter.has_key(p):
-                counter[p] += 1
-            elif not counter.has_key(p):
-                counter[p] = 1
-    return [key for key in counter if counter[key] > 1]
-
-
-def inRect(point, box):
-    xMin, yMin, xMax, yMax = box
-    x, y = point
-    xIn = xMin <= x <= xMax
-    yIn = yMin <= y <= yMax
-    return xIn == yIn == True
-
-
-def boundingBox(points):
+def calcBounds(points):
+    """
+    Return rectangular bounds of a list of points.
+    Similar to fontTools’ calcBounds only with rounding added,
+    rounding is required for the test in intersect() to work.
+    """
     xMin, xMax, yMin, yMax = None, None, None, None
     for (x, y) in points:
         for xRef in [xMin, xMax]:
@@ -188,6 +181,17 @@ def boundingBox(points):
         if y < yMin: yMin = y
     box = [round(value, 4) for value in [xMin, yMin, xMax, yMax]]
     return tuple(box)
+
+def findDuplicatePoints(segments):
+    counter = {}
+    for seg in segments:
+        for (x, y) in seg:
+            p = round(x, 4), round(y, 4)
+            if counter.has_key(p):
+                counter[p] += 1
+            elif not counter.has_key(p):
+                counter[p] = 1
+    return [key for key in counter if counter[key] > 1]
 
 # had to add that splitLine method from Robofont’s version of fontTools
 # using fontTools 2.4’s method didn’t work, don’t know why.
@@ -236,3 +240,40 @@ def splitLine(pt1, pt2, where, isHorizontal):
         return [(pt1, midPt), (midPt, pt2)]
     else:
         return [(pt1, pt2)]
+
+if __name__ == '__main__':
+
+    import os
+    import unittest
+    from defcon import Font
+
+    class FontUtilsTests(unittest.TestCase):
+
+        def setUp(self):
+            libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
+            singleFontPath = u'testFonts/isotropic-anisotropic/regular-mid-contrast.ufo'
+            fontPath = os.path.join(libFolder, singleFontPath)
+            self.font = Font(fontPath)
+
+        def test_intersect_horizontal(self):
+            glyph = self.font['I']
+            yCenter = self.font.info.capHeight / 2
+            intersections = intersect(glyph, yCenter, True)
+            self.assertEqual(intersections, [(234.0, 375.0), (134.0, 375.0)])
+
+        def test_intersect_vertical(self):
+            glyph = self.font['H']
+            xCenter = glyph.width / 2
+            intersections = intersect(glyph, xCenter, False)
+            self.assertEqual(intersections, [(426.5, 356.0), (426.5, 396.0)])
+
+        def test_intersect_vertical_with_overlap_removed(self):
+            glyph = removeOverlap(self.font['H'])
+            xCenter = glyph.width / 2
+            intersections = intersect(glyph, xCenter, False)
+            self.assertEqual(intersections, [(426.5, 356.0), (426.5, 396.0)])
+
+        def test_getRefStems(self):
+            stems = getRefStems(self.font)
+
+    unittest.main()
