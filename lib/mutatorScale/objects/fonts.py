@@ -102,6 +102,13 @@ class ScaleFont(object):
                 self.scale = (x * xy, xy)
 
     def _getGlyphHeight(self, glyphName):
+        box = self._getGlyphBounds(glyphName)
+        if box is not None:
+            xMin, yMin, yMin, yMax = box
+            return yMax - yMin
+        return
+
+    def _getGlyphBounds(self, glyphName):
         glyph = self.glyphSet[glyphName]
         if not glyph.isEmpty():
             pen = BoundsPens(self.glyphSet)
