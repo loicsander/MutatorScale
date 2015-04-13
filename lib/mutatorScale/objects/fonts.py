@@ -79,7 +79,7 @@ class ScaleFont(object):
                 elif referenceHeight in self.glyphSet:
                     referenceHeightValue = self._getGlyphHeight(referenceHeight)
                     if referenceHeightValue is None:
-                        referenceHeightValue = 1
+                        referenceHeightValue = targetHeight
                 else:
                     referenceHeightValue = referenceHeight
 
@@ -110,11 +110,9 @@ class ScaleFont(object):
 
     def _getGlyphBounds(self, glyphName):
         glyph = self.glyphSet[glyphName]
-        if not glyph.isEmpty():
-            pen = BoundsPen(self.glyphSet)
-            glyph.draw(pen)
-            return pen.bounds
-        return
+        pen = BoundsPen(self.glyphSet)
+        glyph.draw(pen)
+        return pen.bounds
 
     def getGlyph(self, glyphName):
         """Return a scaled glyph as a MathGlyph instance."""
@@ -229,6 +227,7 @@ if __name__ == '__main__':
             for testFont in [self.smallFont, self.stemedSmallFont]:
                 testFont.setScale((1.02, 450, 'capHeight'))
                 testFont.setScale((0.65, 350, 250))
+                testFont.setScale((1, 400, 'A'))
 
         def test_get_scaled_glyph_as_MathGlyph(self):
             """Test scaled glyph retrieval."""
