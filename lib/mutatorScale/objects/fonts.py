@@ -111,7 +111,7 @@ class ScaleFont(object):
     def _getGlyphBounds(self, glyphName):
         glyph = self.glyphSet[glyphName]
         if not glyph.isEmpty():
-            pen = BoundsPens(self.glyphSet)
+            pen = BoundsPen(self.glyphSet)
             glyph.draw(pen)
             return pen.bounds
         return
