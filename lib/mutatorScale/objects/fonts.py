@@ -104,7 +104,7 @@ class ScaleFont(object):
     def _getGlyphHeight(self, glyphName):
         box = self._getGlyphBounds(glyphName)
         if box is not None:
-            xMin, yMin, yMin, yMax = box
+            xMin, yMin, xMax, yMax = box
             return yMax - yMin
         return
 
