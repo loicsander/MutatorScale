@@ -102,12 +102,11 @@ class MutatorScaleEngine:
         produce a scale definition relevant to a ScaleFont object.
         """
         scale = (1, 1)
+        width = 1
 
         if scalingParameters.has_key('width'):
             width = scalingParameters['width']
             scale = (width, 1)
-        else:
-            width = 1
 
         if scalingParameters.has_key('scale'):
             scale = scalingParameters['scale']
