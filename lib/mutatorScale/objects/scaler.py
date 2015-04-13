@@ -75,10 +75,21 @@ class MutatorScaleEngine:
     def __contains__(self, fontName):
         return fontName in self.masters
 
+    def getMaster(self, font):
+        """Returning a master by parsing a fonts name if it’s among masters."""
+        name = makeListFontName(font)
+        if name in self.masters:
+            return self.masters[name]
+        return
+
     def hasGlyph(self, glyphName):
+        """Checking for glyph availability in all masters."""
         return glyphName in self._availableGlyphs
 
     def getReferenceGlyphNames(self):
+        """Returning a list of glyphNames for valid reference glyphs,
+        i.e., glyphs that are not empty so they can serve as height reference.
+        """
         masters = self.masters.values()
         glyphNames = self._availableGlyphs
         validGlyphs_names = reduce(lambda a, b: list(set(a) & set(b)), [[glyphName for glyphName in glyphNames if len(master.glyphSet[glyphName])] for master in masters])
