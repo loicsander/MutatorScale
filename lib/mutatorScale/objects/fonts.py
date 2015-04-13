@@ -88,8 +88,6 @@ class ScaleFont(object):
                     targetHeightValue = self.heights[targetHeight]
                 elif targetHeight in self.glyphSet:
                     targetHeightValue = self._getGlyphHeight(targetHeight)
-                    if targetHeightValue is None:
-                        targetHeightValue = referenceHeightValue
                 else:
                     targetHeightValue = targetHeight
 
