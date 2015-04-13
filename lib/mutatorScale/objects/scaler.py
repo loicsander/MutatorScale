@@ -380,13 +380,17 @@ if __name__ == '__main__':
 
         def test_setting_up_scale_by_reference(self):
             """Test setting up scale on a MutatorScaleEngine."""
-            for scaler in self.scalers:
-                scaler.set({
-                    'targetHeight': 490,
-                    'referenceHeight': 'capHeight'
-                    })
-                for glyphName in self.glyphNames:
-                    scaler.getScaledGlyph(glyphName, (100, 40))
+            testScales = [
+                { 'targetHeight': 'A', 'referenceHeight': 'H' },
+                { 'targetHeight': 'A', 'referenceHeight': 'capHeight' },
+                { 'targetHeight': 490, 'referenceHeight': 'capHeight' },
+                { 'targetHeight': 500, 'referenceHeight': 750 },
+            ]
+            for scale in testScales:
+                for scaler in self.scalers:
+                    scaler.set(scale)
+                    for glyphName in self.glyphNames:
+                        scaler.getScaledGlyph(glyphName, (100, 40))
 
         def test_adding_master(self):
             libFolder = os.path.dirname(os.path.dirname((os.path.dirname(os.path.abspath(__file__)))))
