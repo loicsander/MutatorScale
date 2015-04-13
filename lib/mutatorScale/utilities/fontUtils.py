@@ -85,10 +85,10 @@ def getSlantAngle(font, returnDegrees=False):
         hCenter = (yMax - yMin) / 2
         delta = 10
         intersections = []
+        glyph = removeOverlap(testGlyph)
 
         for i in range(2):
             horizontal = hCenter + (i * delta)
-            glyph = removeOverlap(testGlyph)
             intersections.append(intersect(glyph, horizontal, True))
 
         if len(intersections) > 1:
@@ -117,10 +117,11 @@ def removeOverlap(glyph):
         booleanGlyphs = []
 
         for c in toRFGlyph.contours:
-            b = BooleanGlyph()
-            pen = b.getPen()
-            c.draw(pen)
-            booleanGlyphs.append(b)
+            if len(c) > 1:
+                b = BooleanGlyph()
+                pen = b.getPen()
+                c.draw(pen)
+                booleanGlyphs.append(b)
 
         finalBooleanGlyph = reduce(lambda g1, g2: g1 | g2, booleanGlyphs)
         finalBooleanGlyph.drawPoints(pointPen)
