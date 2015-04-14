@@ -12,18 +12,20 @@ from mutatorScale.pens.utilityPens import CollectSegmentsPen
 
 def makeListFontName(font):
     """
-    Return a font name in the form: 'Family name > style name'.
-    The separator allows to easily split this full name later on with name.split(' > ').
+    Return a font name in the form: 'Family name — style name'.
+    The separator allows to easily split this full name later on with name.split(' — ').
     """
-    separator = '-'
     familyName = font.info.familyName
     styleName = font.info.styleName
     if familyName is None:
         familyName = font.info.familyName = 'Unnamed'
     if styleName is None:
         styleName = font.info.styleName = 'Unnamed'
-    return '{familyName} {separator} {styleName}'.format(familyName=familyName, separator=separator, styleName=styleName)
+    return joinFontName(familyName, styleName)
 
+def joinFontName(familyName, styleName):
+    separator = '-'
+    return '{familyName} {separator} {styleName}'.format(familyName=familyName, separator=separator, styleName=styleName)
 
 def getRefStems(font, slantedSection=False):
     """

@@ -11,7 +11,7 @@ from mutatorMath.objects.mutator import buildMutator
 
 from mutatorScale.objects.fonts import MutatorScaleFont
 from mutatorScale.objects.errorGlyph import ErrorGlyph
-from mutatorScale.utilities.fontUtils import makeListFontName
+from mutatorScale.utilities.fontUtils import makeListFontName, joinFontName
 from mutatorScale.utilities.numbersUtils import mapValue
 
 class MutatorScaleEngine:
@@ -80,11 +80,16 @@ class MutatorScaleEngine:
         return fontName in self.masters
 
     def getMaster(self, font):
-        """Returning a master by parsing a fonts name if it’s among masters."""
+        """Returning a master by parsing a fonts name and returning it if it’s among masters."""
         name = makeListFontName(font)
         if name in self.masters:
             return self.masters[name]
         return
+
+    def getMasterByName(self, familyName, styleName):
+        name = joinFontName(familyName, styleName)
+        if name in self:
+            return self[name]
 
     def hasTwoAxes(self):
         if self._workingStems == 'both':
@@ -133,6 +138,9 @@ class MutatorScaleEngine:
 
         self._currentScale = scale
 
+    def update(self):
+        self._determineWorkingStems()
+
     def _makeMaster(self, font, vstem, hstem):
         """Return a MutatorScaleFont."""
         name = makeListFontName(font)
@@ -150,18 +158,18 @@ class MutatorScaleEngine:
         if self._currentScale is not None:
             master.setScale(self._currentScale)
         self.masters[name] = master
-        self._workingStems = self._determineWorkingStems()
         if not len(self._availableGlyphs):
             self._availableGlyphs = master.keys()
         elif len(self._availableGlyphs):
             self._availableGlyphs = list(set(self._availableGlyphs) & set(master.keys()))
+        self.update()
 
     def removeMaster(self, font):
         """Remove a MutatorScaleFont from masters."""
         name = makeListFontName(font)
         if self.masters.has_key(name):
             self.masters.pop(name, 0)
-        self._workingStems = self._determineWorkingStems()
+        self.update()
 
     def getScaledGlyph(self, glyphName, stemTarget, slantCorrection=True, attributes=None):
         """Return an interpolated & scaled glyph according to set parameters and given masters."""
@@ -345,7 +353,8 @@ class MutatorScaleEngine:
                 if diff == True:
                     stemMode = stemName
                     break
-        return stemMode
+
+        self._workingStems = stemMode
 
     def _checkForTwoAxes(self, stemsList):
         """
