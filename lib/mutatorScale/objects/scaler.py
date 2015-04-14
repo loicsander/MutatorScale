@@ -53,7 +53,7 @@ class MutatorScaleEngine:
     def __init__(self, masterFonts=[], stemsWithSlantedSection=False):
         self.masters = {}
         self._currentScale = None
-        self._workingStems = False
+        self._workingStems = None
         self.stemsWithSlantedSection = stemsWithSlantedSection
         self._availableGlyphs = []
         for font in masterFonts:
@@ -127,15 +127,20 @@ class MutatorScaleEngine:
 
         self._currentScale = scale
 
-    def _makeMaster(self, font, stems=None):
+    def _makeMaster(self, font, vstem, hstem):
         """Return a MutatorScaleFont."""
         name = makeListFontName(font)
-        master = MutatorScaleFont(font, stems=stems, stemsWithSlantedSection=self.stemsWithSlantedSection)
+        master = MutatorScaleFont(font, vstem=vstem, hstem=hstem, stemsWithSlantedSection=self.stemsWithSlantedSection)
         return name, master
 
     def addMaster(self, font, stems=None):
         """Add a MutatorScaleFont to masters."""
-        name, master = self._makeMaster(font, stems)
+        if stems is None:
+            vstem, hstem = None, None
+        else:
+            try: vstem, hstem = stems
+            except: vstem, hstem = stems, None
+        name, master = self._makeMaster(font, vstem, hstem)
         if self._currentScale is not None:
             master.setScale(self._currentScale)
         self.masters[name] = master
@@ -237,7 +242,7 @@ class MutatorScaleEngine:
                     setattr(instanceGlyph, attributeName, value)
 
             return instanceGlyph
-        return
+        return self.errorGlyph
 
     def _getInstanceGlyph(self, location, masters):
         I = self._getInstance(location, masters)
@@ -326,7 +331,7 @@ class MutatorScaleEngine:
         elif twoAxes == False:
             for stemName in stems:
                 stemValues = stems[stemName]
-                diff = self._valuesHaveDifferential(stemValues)
+                diff = self._numbersHaveDifferential(stemValues)
                 if diff == True:
                     stemMode = stemName
                     break
@@ -340,11 +345,11 @@ class MutatorScaleEngine:
         """
         twoAxes = []
         for stems in stemsList:
-            twoAxes.append(self._valuesHaveSplitDifferential(stems))
+            twoAxes.append(self._numbersHaveSplitDifferential(stems))
 
         return bool(reduce(lambda a,b: a*b, twoAxes))
 
-    def _valuesHaveSplitDifferential(self, values):
+    def _numbersHaveSplitDifferential(self, values):
         """Looking for at least two similar values and one differing from the others."""
         length = len(values)
         if length > 1:
@@ -353,12 +358,13 @@ class MutatorScaleEngine:
             for i, value in enumerate(values):
                 if i < length-1:
                     nextValue = values[i+1]
-                    if nextValue == value: identicalValues += 1
-                    if nextValue != value: differentValues += 1
+                    if value is not None:
+                        if nextValue == value: identicalValues += 1
+                        if nextValue != value: differentValues += 1
             return bool(identicalValues) and bool(differentValues)
         return False
 
-    def _valuesHaveDifferential(self, values):
+    def _numbersHaveDifferential(self, values):
         """Looking for at least two different values in a bunch."""
         length = len(values)
         if length > 1:
@@ -366,7 +372,7 @@ class MutatorScaleEngine:
             for i, value in enumerate(values):
                 if i < length-1:
                     nextValue = values[i+1]
-                    if nextValue != value: return True
+                    if nextValue != value and value is not None: return True
         return False
 
     def getMutatorReport(self):
@@ -454,5 +460,23 @@ if __name__ == '__main__':
             fontToRemove = self.loadedFonts[0]
             scaler.removeMaster(fontToRemove)
             self.assertEqual(len(scaler), 3)
+
+        def test_scaler_uses_hstem_as_main_value_from_single_values(self):
+            scaler = MutatorScaleEngine()
+            font1 = self.loadedFonts[2]
+            font2 = self.loadedFonts[3]
+            scaler.addMaster(font1, 15)
+            scaler.addMaster(font2, 45)
+            g = scaler.getScaledGlyph('A', 45)
+            self.assertNotEqual(g.name, '_error_')
+
+        def test_scaler_uses_hstem_as_main_value_from_tuples(self):
+            scaler = MutatorScaleEngine()
+            font1 = self.loadedFonts[2]
+            font2 = self.loadedFonts[3]
+            scaler.addMaster(font1, (100, 15))
+            scaler.addMaster(font2, (100, 45))
+            g = scaler.getScaledGlyph('A', 45)
+            self.assertNotEqual(g.name, '_error_')
 
     unittest.main()

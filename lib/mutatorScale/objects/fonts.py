@@ -1,6 +1,10 @@
 #coding=utf-8
 from __future__ import division
 
+import sys
+sys.path.insert(0, '/Users/loicsander/Documents/100 CodeLibs/MutatorScale/lib/')
+import mutatorScale
+
 from mutatorScale.objects.glyphs import MathGlyph
 from mutatorScale.utilities.fontUtils import makeListFontName, getRefStems, getSlantAngle
 
@@ -157,22 +161,26 @@ class ScaleFont(object):
 class MutatorScaleFont(ScaleFont):
     """ Subclass extending a ScaleFont and adding reference stem values to be used inside a MutatorScaleEngine."""
 
-    def __init__(self, font, scale=(1, 1), stems=None, stemsWithSlantedSection=False):
+    def __init__(self, font, scale=(1, 1), vstem=None, hstem=None, stemsWithSlantedSection=False):
         super(MutatorScaleFont, self).__init__(font, scale)
+        self._refVstem, self._refHstem = None, None
         self.stemsWithSlantedSection = stemsWithSlantedSection
-        self.processDimensions(font, stems)
+        self.processDimensions(font, vstem, hstem)
 
     def __repr__(self):
         return '<{className} {fontName}>'.format(className=self.__class__.__name__, fontName=self.name)
 
-    def processDimensions(self, font, stems=None):
-        refVstem, refHstem = getRefStems(font, self.stemsWithSlantedSection)
-        if stems is None:
+    def processDimensions(self, font, vstem, hstem):
+        if vstem is None and hstem is None:
+            refVstem, refHstem = getRefStems(font, self.stemsWithSlantedSection)
             self._refVstem, self._refHstem = refVstem, refHstem
+        elif hstem is None:
+            self._refVstem = vstem
+            self._refHstem = vstem
         else:
-            vstem, hstem = stems
-            self._refVstem = vstem if vstem is not None else refVstem
-            self._refHstem = hstem if hstem is not None else refHstem
+            self._refVstem = vstem
+            self._refHstem = hstem
+
 
     def getStems(self):
         return self.vstem, self.hstem
@@ -214,6 +222,8 @@ if __name__ == '__main__':
             self.smallFont = ScaleFont(font, (0.5, 0.4))
             self.stemedSmallFont = MutatorScaleFont(font, (0.5, 0.4))
             self.stemedSmallFont = MutatorScaleFont(font, (0.5, 0.4), stemsWithSlantedSection=True)
+            self.stemedSmallFont = MutatorScaleFont(font, (0.5, 0.4), vstem=100, stemsWithSlantedSection=True)
+            self.stemedSmallFont = MutatorScaleFont(font, (0.5, 0.4), vstem=120, hstem=140, stemsWithSlantedSection=True)
 
         def test_setScale_with_values(self):
             """Test changing scale with x, y values."""
