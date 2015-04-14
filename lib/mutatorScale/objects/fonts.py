@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, '/Users/loicsander/Documents/100 CodeLibs/MutatorScale/lib/')
 import mutatorScale
 
-from mutatorScale.objects.glyphs import MathGlyph
+from mutatorScale.objects.mathGlyph import MathGlyph
 from mutatorScale.utilities.fontUtils import makeListFontName, getRefStems, getSlantAngle
 
 from fontTools.pens.boundsPen import BoundsPen

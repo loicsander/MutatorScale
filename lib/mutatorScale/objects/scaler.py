@@ -10,7 +10,7 @@ from mutatorMath.objects.location import Location
 from mutatorMath.objects.mutator import buildMutator
 
 from mutatorScale.objects.fonts import MutatorScaleFont
-from mutatorScale.objects.glyphs import errorGlyph
+from mutatorScale.objects.errorGlyph import ErrorGlyph
 from mutatorScale.utilities.fontUtils import makeListFontName
 from mutatorScale.utilities.numbersUtils import mapValue
 
@@ -48,7 +48,7 @@ class MutatorScaleEngine:
     >>> scaler.getScaledGlyph('a', ())
     """
 
-    errorGlyph = errorGlyph()
+    errorGlyph = ErrorGlyph()
 
     def __init__(self, masterFonts=[], stemsWithSlantedSection=False):
         self.masters = {}
@@ -242,14 +242,14 @@ class MutatorScaleEngine:
                     setattr(instanceGlyph, attributeName, value)
 
             return instanceGlyph
-        return self.errorGlyph
+        return ErrorGlyph('None')
 
     def _getInstanceGlyph(self, location, masters):
         I = self._getInstance(location, masters)
         if I is not None:
             return I.extractGlyph(RGlyph())
         else:
-            return self.errorGlyph
+            return ErrorGlyph('Interpolation')
 
     def _getInstance(self, location, masters):
         try:
@@ -264,7 +264,7 @@ class MutatorScaleEngine:
     def _getTargetLocation(self, stemTarget, masters, workingStems, (xScale, yScale)):
         """
         Return a proper Location object for a scaled glyph instance,
-        the essential part lies in the conversion of stem values,
+        the essential part lies in the conversion of stem values.
         so that in anisotropic mode, a MutatorScaleEngine can attempt to produce
         a glyph with proper stem widths without requiring two-axes interpolation.
         """

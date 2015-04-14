@@ -7,6 +7,7 @@ from math import radians, tan, cos, sin, pi
 '''
 Custom implementation of a MathGlyph with skewing.
 Original MathGlyph in FontMath, by Tal Leming: https://github.com/typesupply/fontMath
+See license (MIT), here: https://github.com/typesupply/fontMath/blob/master/License.txt
 '''
 
 def divPt(pt, scalar):
@@ -590,29 +591,3 @@ class MathGlyph(object):
 
     def _skewXByAngle(self, x, y, angle):
         return x + (y * tan(angle))
-
-
-
-def errorGlyph():
-    glyph = RGlyph()
-    glyph.width = 330
-    glyph.name = '_error_'
-    pen = glyph.getPen()
-
-    l = 50
-    p = (130, 170)
-    a = pi/4
-    pen.moveTo(p)
-    px, py = p
-    for i in range(12):
-        x = px+(l*cos(a))
-        y = py+(l*sin(a))
-        pen.lineTo((x, y))
-        px = x
-        py = y
-        if i%3 == 0:
-            a -= pi/2
-        elif i%3 != 0:
-            a += pi/2
-    pen.closePath()
-    return glyph
