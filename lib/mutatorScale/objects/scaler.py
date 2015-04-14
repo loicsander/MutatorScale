@@ -1,6 +1,10 @@
 #coding=utf-8
 from __future__ import division
 
+import sys
+sys.path.insert(0, '/Users/loicsander/Documents/100 CodeLibs/MutatorScale/lib/')
+import mutatorScale
+
 from robofab.world import RGlyph
 from mutatorMath.objects.location import Location
 from mutatorMath.objects.mutator import buildMutator
@@ -49,7 +53,7 @@ class MutatorScaleEngine:
     def __init__(self, masterFonts=[], stemsWithSlantedSection=False):
         self.masters = {}
         self._currentScale = None
-        self._canUseTwoAxes = False
+        self._workingStems = False
         self.stemsWithSlantedSection = stemsWithSlantedSection
         self._availableGlyphs = []
         for font in masterFonts:
@@ -135,7 +139,7 @@ class MutatorScaleEngine:
         if self._currentScale is not None:
             master.setScale(self._currentScale)
         self.masters[name] = master
-        self._canUseTwoAxes = self.checkForTwoAxes()
+        self._workingStems = self._determineWorkingStems()
         if not len(self._availableGlyphs):
             self._availableGlyphs = master.keys()
         elif len(self._availableGlyphs):
@@ -146,12 +150,12 @@ class MutatorScaleEngine:
         name = makeListFontName(font)
         if self.masters.has_key(name):
             self.masters.pop(name, 0)
-        self._canUseTwoAxes = self.checkForTwoAxes()
+        self._workingStems = self._determineWorkingStems()
 
     def getScaledGlyph(self, glyphName, stemTarget, slantCorrection=True, attributes=None):
         """Return an interpolated & scaled glyph according to set parameters and given masters."""
         masters = self.masters.values()
-        twoAxes = self._canUseTwoAxes
+        workingStems = self._workingStems
         mutatorMasters = []
         yScales = []
         angles = []
@@ -164,7 +168,7 @@ class MutatorScaleEngine:
         will result in an scaled glyph which will retain specified stem widths.
         """
 
-        if len(masters) > 1:
+        if len(masters) > 1 and workingStems is not None:
 
             medianYscale = 1
             medianAngle = 0
@@ -178,12 +182,16 @@ class MutatorScaleEngine:
                 if glyphName in master and vstem is not None and hstem is not None:
                     masterGlyph = master[glyphName]
 
-                    if twoAxes == True:
+                    if workingStems == 'both':
                         axis = {
                             'vstem': vstem * xScale,
                             'hstem': hstem * yScale
                             }
                     else:
+                        if workingStems == 'vstem':
+                            stem = vstem
+                        elif workingStems == 'hstem':
+                            stem = hstem
 
                         if slantCorrection == True:
                             # if interpolation is an/isotropic
@@ -194,9 +202,7 @@ class MutatorScaleEngine:
                                 masterGlyph.skewX(angle)
                                 angles.append(angle)
 
-                        axis = {
-                            'stem': vstem * xScale
-                        }
+                        axis = { 'stem': stem * xScale }
 
                     mutatorMasters.append((Location(**axis), masterGlyph))
 
@@ -209,7 +215,7 @@ class MutatorScaleEngine:
             medianYscale = sum(yScales) / len(yScales)
 
 
-            targetLocation = self._getTargetLocation(stemTarget, masters, twoAxes, (xScale, medianYscale))
+            targetLocation = self._getTargetLocation(stemTarget, masters, workingStems, (xScale, medianYscale))
             instanceGlyph = self._getInstanceGlyph(targetLocation, mutatorMasters)
 
             if instanceGlyph.name == '_error_':
@@ -250,7 +256,7 @@ class MutatorScaleEngine:
             self.mutatorErrors.append({'error':e.message})
             return None
 
-    def _getTargetLocation(self, stemTarget, masters, twoAxes, (xScale, yScale)):
+    def _getTargetLocation(self, stemTarget, masters, workingStems, (xScale, yScale)):
         """
         Return a proper Location object for a scaled glyph instance,
         the essential part lies in the conversion of stem values,
@@ -265,7 +271,10 @@ class MutatorScaleEngine:
 
         if targetHstem is not None:
 
-            if twoAxes == False:
+            if workingStems == 'both':
+                return Location(vstem=targetVstem, hstem=targetHstem)
+
+            else:
                 vStems = [master.vstem * xScale for master in masters]
                 hStems = [master.hstem * yScale for master in masters]
                 (minVStem, minStemIndex), (maxVStem, maxStemIndex) = self._getExtremes(vStems)
@@ -273,9 +282,6 @@ class MutatorScaleEngine:
                 hStemSpan = hStems[minStemIndex], hStems[maxStemIndex]
                 newHstem = mapValue(targetHstem, hStemSpan, vStemSpan)
                 return Location(stem=(targetVstem, newHstem))
-
-            elif twoAxes == True:
-                return Location(vstem=targetVstem, hstem=targetHstem)
 
         else:
 
@@ -297,28 +303,70 @@ class MutatorScaleEngine:
             return smallest, largest
         return
 
-    def checkForTwoAxes(self, masters=None):
+    def _determineWorkingStems(self):
         """
         Check conditions are met for two-axis interpolation in MutatorMath:
         1. At least two identical values (to bind a new axis to the first axis)
-        2. At least one value different from the others (to be able to have a differential on second axis)
+        2. At least a third and different value (to be able to have a differential on second axis)
         """
-        if masters is None:
-            masters = self.masters.values()
+        masters = self.masters.values()
+        twoAxes = False
+        stemMode = None
+        stems = {
+            'vstem': [master.vstem for master in masters],
+            'hstem': [master.hstem for master in masters]
+        }
 
         if len(masters) > 2:
-            values = [master.hstem for master in masters]
+            twoAxes = self._checkForTwoAxes(stems.values())
 
-            length = len(values)
-            if length:
-                identicalValues = 0
-                differentValues = 0
-                for i, value in enumerate(values):
-                    if i < length-1:
-                        nextValue = values[i+1]
-                        if nextValue == value: identicalValues += 1
-                        if nextValue != value: differentValues += 1
-                return bool(identicalValues) and bool(differentValues)
+        if twoAxes == True:
+            stemMode = 'both'
+
+        elif twoAxes == False:
+            for stemName in stems:
+                stemValues = stems[stemName]
+                diff = self._valuesHaveDifferential(stemValues)
+                if diff == True:
+                    stemMode = stemName
+                    break
+        return stemMode
+
+    def _checkForTwoAxes(self, stemsList):
+        """
+        Check conditions are met for two-axis interpolation in MutatorMath:
+        1. At least two identical values (to bind a new axis to the first axis)
+        2. At least a third and different value (to be able to have a differential on second axis)
+        """
+        twoAxes = []
+        for stems in stemsList:
+            twoAxes.append(self._valuesHaveSplitDifferential(stems))
+
+        return bool(reduce(lambda a,b: a*b, twoAxes))
+
+    def _valuesHaveSplitDifferential(self, values):
+        """Looking for at least two similar values and one differing from the others."""
+        length = len(values)
+        if length > 1:
+            identicalValues = 0
+            differentValues = 0
+            for i, value in enumerate(values):
+                if i < length-1:
+                    nextValue = values[i+1]
+                    if nextValue == value: identicalValues += 1
+                    if nextValue != value: differentValues += 1
+            return bool(identicalValues) and bool(differentValues)
+        return False
+
+    def _valuesHaveDifferential(self, values):
+        """Looking for at least two different values in a bunch."""
+        length = len(values)
+        if length > 1:
+            differentValues = 0
+            for i, value in enumerate(values):
+                if i < length-1:
+                    nextValue = values[i+1]
+                    if nextValue != value: return True
         return False
 
     def getMutatorReport(self):
