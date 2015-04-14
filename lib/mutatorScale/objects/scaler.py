@@ -158,17 +158,22 @@ class MutatorScaleEngine:
 
     def addMaster(self, font, stems=None):
         """Add a MutatorScaleFont to masters."""
+
         vstem, hstem = self._parseStemsInput(stems)
         if (vstem is None) and ('I' not in font):
             vstem = len(self.masters) * 100
+
         name, master = self._makeMaster(font, vstem, hstem)
-        if self._currentScale is not None:
-            master.setScale(self._currentScale)
-        self.masters[name] = master
+
         if not len(self._availableGlyphs):
             self._availableGlyphs = master.keys()
         elif len(self._availableGlyphs):
             self._availableGlyphs = list(set(self._availableGlyphs) & set(master.keys()))
+
+        if self._currentScale is not None:
+            master.setScale(self._currentScale)
+
+        self.masters[name] = master
         self.update()
 
     def removeMaster(self, font):
