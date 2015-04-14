@@ -255,7 +255,8 @@ class MutatorScaleEngine:
         if I is not None:
             return I.extractGlyph(RGlyph())
         else:
-            return ErrorGlyph('Interpolation')
+            errorMessage = self.mutatorErrors[-1]['error']
+            return ErrorGlyph('Interpolation', errorMessage)
 
     def _getInstance(self, location, masters):
         try:
