@@ -279,7 +279,7 @@ class MutatorScaleEngine:
             if workingStems == 'both':
                 return Location(vstem=targetVstem, hstem=targetHstem)
 
-            else:
+            elif workingStems == 'vstem':
                 vStems = [master.vstem * xScale for master in masters]
                 hStems = [master.hstem * yScale for master in masters]
                 (minVStem, minStemIndex), (maxVStem, maxStemIndex) = self._getExtremes(vStems)
@@ -287,6 +287,9 @@ class MutatorScaleEngine:
                 hStemSpan = hStems[minStemIndex], hStems[maxStemIndex]
                 newHstem = mapValue(targetHstem, hStemSpan, vStemSpan)
                 return Location(stem=(targetVstem, newHstem))
+
+            elif workingStems == 'hstem':
+                return Location(stem=targetHstem)
 
         else:
 
