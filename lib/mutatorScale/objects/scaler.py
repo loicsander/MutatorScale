@@ -1,10 +1,6 @@
 #coding=utf-8
 from __future__ import division
 
-import sys
-sys.path.insert(0, '/Users/loicsander/Documents/100 CodeLibs/MutatorScale/lib/')
-import mutatorScale
-
 from robofab.world import RGlyph
 from mutatorMath.objects.location import Location
 from mutatorMath.objects.mutator import buildMutator
