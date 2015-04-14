@@ -333,7 +333,7 @@ class MutatorScaleEngine:
         }
 
         if len(masters) > 2:
-            twoAxes = self._checkForTwoAxes(stems.values())
+            twoAxes = self._checkForTwoAxes(stems)
 
         if twoAxes == True:
             stemMode = 'both'
@@ -354,8 +354,10 @@ class MutatorScaleEngine:
         2. At least a third and different value (to be able to have a differential on second axis)
         """
         twoAxes = []
-        for stems in stemsList:
-            twoAxes.append(self._numbersHaveSplitDifferential(stems))
+        vstems = stemsList['vstem']
+        hstems = stemsList['hstem']
+        twoAxes.append(self._numbersHaveDifferential(vstems))
+        twoAxes.append(self._numbersHaveSplitDifferential(hstems))
 
         return bool(reduce(lambda a,b: a*b, twoAxes))
 
