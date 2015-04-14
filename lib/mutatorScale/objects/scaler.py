@@ -141,6 +141,15 @@ class MutatorScaleEngine:
     def update(self):
         self._determineWorkingStems()
 
+    def _parseStemsInput(self, stems):
+        if stems is None:
+            vstem, hstem = None, None
+        else:
+            try: vstem, hstem = stems
+            except: vstem, hstem = stems, None
+
+        return vstem, hstem
+
     def _makeMaster(self, font, vstem, hstem):
         """Return a MutatorScaleFont."""
         name = makeListFontName(font)
@@ -149,11 +158,9 @@ class MutatorScaleEngine:
 
     def addMaster(self, font, stems=None):
         """Add a MutatorScaleFont to masters."""
-        if stems is None:
-            vstem, hstem = None, None
-        else:
-            try: vstem, hstem = stems
-            except: vstem, hstem = stems, None
+        vstem, hstem = self._parseStemsInput(stems)
+        if (vstem is None) and ('I' not in font):
+            vstem = len(self.masters) * 100
         name, master = self._makeMaster(font, vstem, hstem)
         if self._currentScale is not None:
             master.setScale(self._currentScale)
