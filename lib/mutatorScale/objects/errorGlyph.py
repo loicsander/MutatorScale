@@ -24,24 +24,6 @@ _LETTERFORMS = {
 
 class ErrorGlyph(RGlyph):
 
-    letters = {
-        'interpolation':[
-            (296, 322), (201, 322),
-            (201, 352), (231, 352),
-            (231, 397), (201, 397),
-            (201, 427), (296, 427),
-            (296, 397), (266, 397),
-            (266, 352), (296, 352)
-        ],
-        'none':[
-            (231, 322), (201, 322),
-            (201, 427), (236, 427),
-            (266, 374), (266, 427),
-            (296, 427), (296, 322),
-            (261, 322), (231, 375)
-        ]
-    }
-
     def __new__(cls, errorName=None, report=None, size=500, upm=1000):
         newGlyph = super(ErrorGlyph, cls).__new__(cls)
         newGlyph.__init__(errorName, report, size, upm)
