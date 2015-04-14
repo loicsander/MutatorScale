@@ -86,6 +86,12 @@ class MutatorScaleEngine:
             return self.masters[name]
         return
 
+    def hasTwoAxes(self):
+        if self._workingStems == 'both':
+            return True
+        else:
+            return False
+
     def hasGlyph(self, glyphName):
         """Checking for glyph availability in all masters."""
         return glyphName in self._availableGlyphs
