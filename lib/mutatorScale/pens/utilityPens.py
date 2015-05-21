@@ -56,7 +56,9 @@ class CollectSegmentsPen(BasePen):
     def endPath(self):
         self.contours.append(self.segments)
 
-    closePath = endPath
+    def closePath(self):
+        self.segments.append((self.previousPoint, self.segments[0][0]))
+        self.contours.append(self.segments)
 
     def getSegments(self):
         return self.contours
