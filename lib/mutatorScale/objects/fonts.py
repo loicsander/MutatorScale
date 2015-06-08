@@ -164,7 +164,7 @@ class MutatorScaleFont(ScaleFont):
         self.processDimensions(font, vstem, hstem)
 
     def __repr__(self):
-        return '<{className} {fontName}>'.format(className=self.__class__.__name__, fontName=self.name)
+        return '<{className} {fontName} v:{vstem} h:{hstem}>'.format(className=self.__class__.__name__, fontName=self.name, vstem=self._refVstem, hstem=self._refHstem)
 
     def processDimensions(self, font, vstem, hstem):
         if vstem is None and hstem is None:

@@ -50,6 +50,7 @@ class MutatorScaleEngine:
         self.masters = {}
         self._currentScale = None
         self._workingStems = None
+        self._transformations = {}
         self.stemsWithSlantedSection = stemsWithSlantedSection
         self._availableGlyphs = []
         for font in masterFonts:
@@ -57,7 +58,7 @@ class MutatorScaleEngine:
         self.mutatorErrors = []
 
     def __repr__(self):
-        return 'MutatorScaleEngine # {0} masters\n- {1}\n'.format(len(self.masters), '\n- '.join([str(master) for master in self.masters]))
+        return 'MutatorScaleEngine w/ {0} masters\n- {1}\n'.format(len(self.masters), '\n- '.join([repr(master) for master in self.masters.values()]))
 
     def __getitem__(self, key):
         if key in self.masters.keys():
@@ -381,6 +382,7 @@ class MutatorScaleEngine:
     def _numbersHaveSplitDifferential(self, values):
         """Looking for at least two similar values and one differing from the others."""
         length = len(values)
+        values.sort()
         if length > 1:
             identicalValues = 0
             differentValues = 0
@@ -396,13 +398,17 @@ class MutatorScaleEngine:
     def _numbersHaveDifferential(self, values):
         """Looking for at least two different values in a bunch."""
         length = len(values)
+        values.sort()
+        differential = False
         if length > 1:
             differentValues = 0
             for i, value in enumerate(values):
                 if i < length-1:
                     nextValue = values[i+1]
-                    if nextValue != value and value is not None: return True
-        return False
+                    if nextValue != value and value is not None:
+                        differential = True
+                        break
+        return differential
 
     def getMutatorReport(self):
         return self.mutatorErrors
