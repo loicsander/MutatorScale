@@ -50,7 +50,6 @@ class MutatorScaleEngine:
         self.masters = {}
         self._currentScale = None
         self._workingStems = None
-        self._transformations = {}
         self.stemsWithSlantedSection = stemsWithSlantedSection
         self._availableGlyphs = []
         for font in masterFonts:
