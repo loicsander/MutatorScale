@@ -295,9 +295,9 @@ class MutatorScaleEngine:
         targetVstem, targetHstem = None, None
 
         try: targetVstem, targetHstem = stemTarget
-        except: targetVstem = stemTarget
+        except: pass
 
-        if targetHstem is not None:
+        if targetVstem is not None and targetHstem is not None:
 
             if workingStems == 'both':
                 return Location(vstem=targetVstem, hstem=targetHstem)
@@ -316,7 +316,7 @@ class MutatorScaleEngine:
 
         else:
 
-            return Location(stem=targetVstem)
+            return Location(stem=stemTarget)
 
     def _getExtremes(self, values):
         """
