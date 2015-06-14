@@ -87,6 +87,9 @@ class MutatorScaleEngine:
         if name in self:
             return self[name]
 
+    def getCurrentStemBase(self):
+        return self._workingStems
+
     def hasTwoAxes(self):
         if self._workingStems == 'both':
             return True
