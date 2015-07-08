@@ -86,7 +86,7 @@ With well defined key Locations (= masters), you obtain an axis on which you can
 
 Quite often with glyph interpolation, we use Location values that correspond to some weight pacing system (0 to 1000, 100 Thin, 300 Light, 400 Regular, etc.). But the numbers you use for locations can be anything. In MutatorScale I used stem values because that’s the thing I wanted to keep track of. If you build a mutator with stem values, you can effectively ask for an interpolated glyph with specific stem values.
 
-On top of MutatorMath, the only thing done my a MutatorScaleEngine is to use an interpolation space containing scaled glyphs, defining these as master Locations by their scaled stem values, and allowing you to retrieve instance glyphs with unscaled stem values.
+On top of MutatorMath, the only thing done by a MutatorScaleEngine is to use an interpolation space containing scaled glyphs, defining these as master Locations by their scaled stem values, and allowing you to retrieve instance glyphs with unscaled stem values.
 
 Let’s say I have two masters, a Regular and a Bold. In the regular weight, an H’s vertical stem is 100 units wide, and in the bold weight, 200 units. If I’d like to obtain a regular small capital H with vertical stems of 100 units, scaled down 85% in width and 80% in height, here’s what I have to do around MutatorMath:
 
@@ -118,7 +118,7 @@ b, mutator = buildMutator(masters)
 smallH = mutator.getInstance( Location(stem=100) )
 ```
 
-Now we retrieved a scaled down ‘H’ glyph with weight identical to a unscaled ‘H’, and that’s the basic operation happening inside of a MutatorScaleEngine. 
+Now we retrieved a scaled down ‘H’ glyph with weight identical to a unscaled ‘H’, and that’s the basic operation happening inside of a MutatorScaleEngine.
 
 ## Types of interpolation
 
@@ -138,7 +138,7 @@ You can get better result if you work with anisotropic interpolation, providing 
 scaler.getScaledGlyph(‘H’, (100, 20))
 ```
 
-But you should be aware that this can lead to ugly deformations if pushed too far; it’s not an ideal solution. Still, used with reason, it can produce close to final results with some designs. 
+But you should be aware that this can lead to ugly deformations if pushed too far; it’s not an ideal solution. Still, used with reason, it can produce close to final results with some designs.
 
 *(When you go too far with anisotropic interpolation)*
 ![alt tag](images/mutatorScale-4.png)
